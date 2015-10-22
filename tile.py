@@ -49,6 +49,7 @@ class Tile():
         self.abs_pixel_pos = mapLocToPixelPos(self.pos)
 
         self.animated = False
+        self.terrain = terr
         self.setTerrain(terr)
         self.feature = feature
         self.ui_element = ui

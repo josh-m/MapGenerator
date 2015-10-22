@@ -4,7 +4,7 @@ from pyglet.window import key
 import math
 from copy import deepcopy
 
-from definitions import DiagDir, Feature
+from definitions import DiagDir, Terrain, Feature
 from constants import  (MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, UI_PANEL_WIDTH,
                         DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED)
 from util import isEven
@@ -22,10 +22,11 @@ class GameWindow(pyglet.window.Window):
         super(GameWindow, self).__init__(   MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,
                                             WINDOW_HEIGHT, *args, **kwargs)
 
+        self.map = map
+        self.turn = 1
+        
         self.fps_display = pyglet.window.FPSDisplay(self)
         self._show_fps = True
-
-        self.map = map
 
         self.batch = pyglet.graphics.Batch()
         self.terrain_group = pyglet.graphics.OrderedGroup(0)
@@ -41,8 +42,17 @@ class GameWindow(pyglet.window.Window):
         self.scroll_dir = DiagDir.NONE
         self.ul_idx = [0,0]
 
-
-
+        #UI text
+        self.turn_label = pyglet.text.Label('Turn: 1', font_name='Arial',
+                                        font_size=24, x=MAP_DISPLAY_WIDTH+10,
+                                        y=WINDOW_HEIGHT, anchor_x='left', anchor_y='top',
+                                        color = (0,0,0,255))
+                                        
+        self.terrain_label = pyglet.text.Label('Terrain: None', font_name='Arial',
+                                        font_size=16, x=MAP_DISPLAY_WIDTH+10,
+                                        y=WINDOW_HEIGHT-40, anchor_x='left', anchor_y='top',
+                                        color = (0,0,0,255))
+                                        
         self.selection_sprite = pyglet.sprite.Sprite(img = resources.selection_image,
                                                     batch=self.batch,
                                                     group=self.ui_group)
@@ -74,6 +84,7 @@ class GameWindow(pyglet.window.Window):
             self.fps_display.draw()
         
         #UI sidebar placeholder
+        
         pyglet.graphics.draw(
                 4, pyglet.gl.GL_QUADS,
                 ('v2f',
@@ -82,6 +93,10 @@ class GameWindow(pyglet.window.Window):
                     MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,0,
                     MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,WINDOW_HEIGHT
                     )))
+        
+        
+        self.turn_label.draw()
+        self.terrain_label.draw()
             
             
     def update(self, dt):
@@ -91,6 +106,9 @@ class GameWindow(pyglet.window.Window):
     def on_key_press(self, symbol, modifiers):
         if symbol == key.GRAVE:
             self._show_fps = not self._show_fps
+        elif symbol == key.SPACE:
+            self.turn += 1
+            self.turn_label.text = 'Turn: ' + str(self.turn)
 
     def on_mouse_press(self,x,y,button,modifiers):
         min_distance = 5000000
@@ -111,11 +129,22 @@ class GameWindow(pyglet.window.Window):
         self.selection_sprite.x = min_pos[0]
         self.selection_sprite.y = min_pos[1]
 
+        #selected_idx = (int(min_sprite.x), int(min_sprite.y))
+        self.selected_tile = self.map.tileAt(min_sprite.map_pos)
+        
+        #determine terrain and update label
+        if self.selected_tile.terrain == Terrain.WATER:
+            self.terrain_label.text = 'Terrain: Ocean'
+        elif self.selected_tile.terrain == Terrain.GRASS:
+            self.terrain_label.text = 'Terrain: Grassland'
+        else:
+            self.terrain_labe.text = 'Terrain: Unknown'
+        
         print("Selected Tile INDEX:" + str(min_sprite.map_pos) +
                 " pixel pos:" + str(min_sprite.x) +","+str(min_sprite.y))
 
         print("draw_list length:" + str(len(self.draw_list)))
-
+        
 
     def on_mouse_motion(self,x,y,dx,dy):
         self.scroll_dir = determine_scroll_dir(x,y)
