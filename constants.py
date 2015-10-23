@@ -1,5 +1,5 @@
-MAP_X = 160 #number of tiles per row in world
-MAP_Y = 100 #number of tiles per column in world
+MAP_COL_COUNT = 160 #number of tiles per row in world
+MAP_ROW_COUNT = 100 #number of tiles per column in world
 
 MAP_DISPLAY_WIDTH = 800
 WINDOW_HEIGHT = 600

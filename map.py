@@ -1,45 +1,65 @@
+"""
+Map
+
+Map generates and stores the list of tiles and their indexes.
+Also keeps track of the currently selected tile.
+
+OUTSTANDING BUGS:
+Forest can grow over the starting city (either logically here, or graphically in GameWindow)
+"""
+
 import random
 
 from tile import Tile
 from definitions import HexDir, Terrain, Feature, UiElement
-from constants import MAP_X, MAP_Y
+from constants import MAP_COL_COUNT, MAP_ROW_COUNT
 
 def isEven(integer):
     return not (integer % 2)
 
-#TODO: disable world wrapping
-#The world is flat! (Add sea monsters at ocean edges)
     
 class Map():
-    def __init__(self, cols=MAP_X, rows=MAP_Y):
-        self.size = (cols, rows)
+    """
+    __init__:
+    By default creates a map with the default size.
+    Supply two integers to constructor to generate a different size.
+    """
+    #TODO: Separate functionality. Less code in __init__ -- helper functions
+    def __init__(self, n_cols=MAP_COL_COUNT, n_rows=MAP_ROW_COUNT):
+        self.size = (n_cols, n_rows)
         self.columns = list()
 
-        for col in range(cols):
+        #generate the tiles for the map
+        for col in range(n_cols):
             column = list()
-            for row in range(rows):
+            for row in range(n_rows):
                 column.append(Tile([col, row]))
 
             self.columns.append(column)
 
         #select starting location for town
-        town_loc = [int(random.triangular(0,cols)),
-                    int(random.triangular(0,rows))]
-        print("rand town idx:" +str(town_loc))
+        town_loc = [int(random.triangular(0,n_cols)),
+                    int(random.triangular(0,n_rows))]
+                    
+
         town_tile = self.tileAt(town_loc)
-        print("tile idx:" +str(town_tile.pos) +" tile_px_pos:"+str(town_tile.abs_pixel_pos))
         town_tile.setTerrain(Terrain.GRASS)
         town_tile.feature = Feature.TOWN
 
         self.start_tile = town_tile
-
-        print("start_tile pix pos: "+str(self.start_tile.abs_pixel_pos))
 
         self.generateLandmassAround(town_loc)
         self.generateForests()
 
         self.selected_tile = None
 
+    """
+    selectTile:
+    Given a tile, sets its UI element to a border and
+    tracks the tile as the currently selected tile.
+    """
+    #TODO: Check that this tile is within this map.
+    #TODO: Consider removal, is never called.    
     def selectTile(self, tile):
         if tile:
             if self.selected_tile:
@@ -47,6 +67,11 @@ class Map():
             tile.ui_element = UiElement.BORDER
             self.selected_tile = tile
 
+    """
+    tileAt:
+    Returns the tile object at the position (pos) given.
+    Supports indices larger than the map for world wrap support.
+    """
     def tileAt(self, pos):
         x = pos[0]
         y = pos[1]
@@ -55,80 +80,147 @@ class Map():
 
         return tile
 
-    #TODO: investigate potential error in tileAt(col)
-    def column(self, col, start_row, end_row):
+    """
+    Returns the column at the given index (col_idx).
+    Supports specifying a subset of the col.
+    """
+    def column(self, col_idx, start_row=0, end_row=MAP_ROW_COUNT):
         ls = list()
-        for row in range(start_row, end_row):
-            ls.append(self.tileAt([col, row]))
+        for row_idx in range(start_row, end_row):
+            ls.append(self.tileAt([col_idx, row_idx]))
+
+        return ls
+    
+    """
+    Returns the column at the given index (row_idx).
+    Supports specifying a subset of the row.
+    """
+    def row(self, row_idx, start_col=0, end_col=MAP_COL_COUNT):
+        ls = list()
+        for col_idx in range(start_col, end_col):
+            ls.append(self.tileAt([col_idx, row_idx]))
 
         return ls
 
-    def row(self, row, start_col, end_col):
-        ls = list()
-        for col in range(start_col, end_col):
-            ls.append(self.tileAt([col, row]))
-
-        return ls
-
+    """
+    notVisited:
+    Checks if a tile's visited attribute is set.
+    (The visited attribute is used as a temporary state variable for
+    generation algorithms)
+    """
     def notVisited(self, tile):
         if (not tile.visited) and tile.depth == -1:
             return True
         else:
             return False
-
-    def isFlat(self, tile):
-        return tile.terrain == Terrain.GRASS
-
-    def notVisited(self,tile):
-        if (not tile.visited) and tile.depth == -1:
-            return True
-        else:
-            return False
-
-    def resetVisited(self):
+    """
+    resetAllVisited:
+    Sets the visited attribute to false for every tile in this Map.
+    """
+    def resetAllVisited(self):
         for col in self.columns:
             for tile in col:
                 tile.visited = False
 
-    def resetDepth(self):
-        for col in self.columns:
-            for tile in col:
-                tile.depth = -1
+    """
+    isValidCityLocation:
+    Tests whether a tile is a valid place for a city to be built.
+    """
+    #TODO: Allow additional terrain types.
+    #TODO: Check if a city is already present, or other obstacle preventing settling.
+    def isValidCityLocation(self, tile):
+        return tile.terrain == Terrain.GRASS
 
+    def isValidForestLocation(self, tile):
+        return tile.terrain == Terrain.GRASS
+        
     #
     #World building methods
     #
+    
+    """
+    generateLandmassAround:
+    Randomly sets a portion of tiles around the given index
+    to flatland.
+    Larger or smaller areas can be specified by providing a
+    gen_chance above or below the default 100.
+    """ 
+    #TODO: Allow more options for the landmass (shape...)
+    #TODO: Generate interesting land with varied terrain. (Mountain, hills, beachers)
+    def generateLandmassAround(self, pos, gen_chance= 100.0):
+        this_tile = self.tileAt(pos)
+        this_tile.visited = True
 
+        gen_list = self.neighborsOf(this_tile)
+        temp_list = list()
+
+        while gen_list:
+            #set all these tiles to visited
+            #and give them a chance to be added to landmass
+            for tile in gen_list:
+                tile.visited = True
+
+                if random.uniform(0, 99.9) < gen_chance:
+                    tile.setTerrain(Terrain.GRASS)
+                    temp_list += self.neighborsOf(tile)
+
+            gen_list = gen_list + temp_list
+            #prune visited from list
+            gen_list = list(filter(self.notVisited, gen_list))
+
+            #TODO: KNOWN BUG -- decreasing the following value may result in an infinite loop
+            #where gen_list is growing too fast, and the temp_list is getting nearly
+            #every tile on the map (even duplicates due to the world wrapping in neighborAt())
+            #FIX OPTIONS: check for duplicates (use visited attribute), remove world wrapping,
+            #or just don't fuck w/ the value (although loop is still possible,
+            # however unlikely, with regular values)
+            gen_chance -= 8.0
+
+            
+    """
+    generateForests:
+    Meant to be called after landmass is generated. Creates forests randomly on the map.
+    """
     def generateForests(self):
         gen_chance = 7.0
         land = list()
         for col in self.columns:
-            land += filter(self.isFlat, col)
+            land += filter(self.isValidForestLocation, col)
 
         for tile in land:
             if (random.uniform(0, 100.0) < gen_chance) and (not tile.feature):
                 tile.feature = Feature.FOREST
                 self.spreadForest(tile)
-                self.resetVisited()
+                self.resetAllVisited()
 
+    """
+    spreadForest:
+    Helper function of generateForests; adds trees in
+    an area around the tile.
+    """
     def spreadForest(self, tile, gen_chance=100.0):
         tile.visited = True
         
         if (random.uniform(0,99.9) < gen_chance):
             tile.feature = Feature.FOREST
             neighbors = self.neighborsOf(tile)
-            neighbors = filter(self.isFlat, neighbors)
+            neighbors = filter(self.isValidForestLocation, neighbors)
             neighbors = filter(self.notVisited, neighbors)
         
             for neighbor_tile in neighbors:
                 self.spreadForest(neighbor_tile, gen_chance - 25.0)
 
-    #def generatePoles(self):
-
+    """
+    neighborsOf:
+    Returns a list of all tiles immediately neighboring the given tile           
+    """
     def neighborsOf(self, tile):
         return self.neighborsOfPos(tile.pos)
 
-    #returns a list of all neighboring tiles
+    """
+    neighborsOfPos:
+    Returns a list of all tiles immediately neighboring the tile at the given index
+    """
     def neighborsOfPos(self, pos):
         #print str(pos[0]) + " " + str(pos[1])
         ls = list()
@@ -140,8 +232,11 @@ class Map():
 
         return ls
 
-
-    #returns tile coordinates if neighbor exists, else None
+    """
+    neightborAt:
+    Given an index on the map and a direction (HexDir), returns
+    that neighboring tile. Supports world wrapping.
+    """
     def neighborAt(self, pos, dir):
         pos_x, pos_y = self.tileAt(pos).pos
 
@@ -191,30 +286,3 @@ class Map():
                 _y = pos_y
 
         return [_x,_y]
-
-    #iterative iteration that produces more bulky landmasses
-    def generateLandmassAround(self, pos, gen_chance= 100.0):
-        this_tile = self.tileAt(pos)
-        this_tile.visited = True
-
-        gen_list = self.neighborsOf(this_tile)
-        temp_list = list()
-
-        while gen_list:
-            #set all these tiles to visited
-            #and give them a chance to be added to landmass
-            for tile in gen_list:
-                tile.visited = True
-
-                if random.uniform(0, 99.9) < gen_chance:
-                    tile.setTerrain(Terrain.GRASS)
-                    temp_list += self.neighborsOf(tile)
-
-            gen_list = gen_list + temp_list
-            #prune visited from list
-            gen_list = list(filter(self.notVisited, gen_list))
-
-            #BUG: 
-            #decreasing too much increases chance of infinite loop
-            #
-            gen_chance -= 8.0

@@ -52,19 +52,20 @@ class GameWindow(pyglet.window.Window):
                                         font_size=16, x=MAP_DISPLAY_WIDTH+10,
                                         y=WINDOW_HEIGHT-40, anchor_x='left', anchor_y='top',
                                         color = (0,0,0,255))
-                                        
+                              
         self.selection_sprite = pyglet.sprite.Sprite(img = resources.selection_image,
                                                     batch=self.batch,
                                                     group=self.ui_group)
         self.selection_sprite.x = -5000
         self.selection_sprite.y = -5000
-        #self.draw_list.append(self.selection_sprite)
+
 
 
         pyglet.clock.schedule_interval(self.update, 1/45.0)
 
         #determine index of top right tile based on initial camera
         self.cam_idx = pixelPosToMapLoc(self.cam_pos)
+        
         #push cam_idx up and left for seamless scrolling
         if self.cam_idx[0] > 1:
             self.cam_idx[0] -= 2
@@ -125,10 +126,10 @@ class GameWindow(pyglet.window.Window):
                 min_distance = distance
                 min_pos = [sprite.x, sprite.y]
                 min_sprite = sprite
-
+        
         self.selection_sprite.x = min_pos[0]
         self.selection_sprite.y = min_pos[1]
-
+        
         #selected_idx = (int(min_sprite.x), int(min_sprite.y))
         self.selected_tile = self.map.tileAt(min_sprite.map_pos)
         
@@ -174,10 +175,12 @@ class GameWindow(pyglet.window.Window):
         for sprite in self.draw_list:
             sprite.x = sprite.pix_pos[0] - self.cam_pos[0]
             sprite.y = sprite.pix_pos[1] + self.cam_pos[1]
+        
 
         self.selection_sprite.x -= dx
         self.selection_sprite.y -= dy
 
+        
         #do columns need to be updated?
         if self.cam_dx > TILE_THRESHOLD_X:
             #print("shift left")
@@ -214,7 +217,7 @@ class GameWindow(pyglet.window.Window):
             self.addDrawRow(self.cam_idx[1])
 
     def addDrawRow(self, row_idx):
-        map_row = self.map.row( row = row_idx,
+        map_row = self.map.row( row_idx,
                                 start_col=self.cam_idx[0],
                                 end_col=self.cam_idx[0]+DRAW_X)
         assert(len(map_row) >= DRAW_X)
@@ -262,7 +265,7 @@ class GameWindow(pyglet.window.Window):
             sprite.delete() #immediately removes sprite from video memory
 
     def addDrawColumn(self, col_idx):
-        map_col = self.map.column(  col=col_idx,
+        map_col = self.map.column(  col_idx,
                                     start_row=self.cam_idx[1],
                                     end_row=self.cam_idx[1]+DRAW_Y)
         assert(len(map_col) >= DRAW_Y)
