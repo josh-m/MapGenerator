@@ -178,6 +178,9 @@ class GameWindow(pyglet.window.Window):
                                     img = tile.unitImg(),
                                     batch = self.batch,
                                     group = self.unit_group)
+            pos = tile.getAbsolutePixelPos()
+            unit_sprite.x = pos[0] - self.cam_pos[0]
+            unit_sprite.y = pos[1] + self.cam_pos[1]
             self.draw_list.append(unit_sprite)
                 
     def removeDrawRow(self, row):
