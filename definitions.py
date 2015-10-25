@@ -6,12 +6,20 @@ class Terrain(Enum):
     GRASS = 2
 
 class Feature(Enum):
-    NONE = 0
     FOREST = 1
     TOWN = 2
 
 class UiElement(Enum):
     BORDER = 1
+    
+class UnitType(Enum):
+    SETTLER = 1
+    CIVILIAN = 2
+
+class Behavior(Enum):
+    IDLE = 0
+    WANDER = 1
+    GATHER = 2
 
 class HexDir(IntEnum):
     FIRST=0
@@ -40,10 +48,3 @@ class DiagDir(Enum):
     UL=6
     DR=7
     DL=8
-
-
-
-class Behavior(Enum):
-    IDLE = 0
-    WANDER = 1
-    GATHER = 2

@@ -11,7 +11,7 @@ Forest can grow over the starting city (either logically here, or graphically in
 import random
 
 from tile import Tile
-from definitions import HexDir, Terrain, Feature, UiElement
+from definitions import HexDir, Terrain, Feature, UnitType, UiElement
 from constants import MAP_COL_COUNT, MAP_ROW_COUNT
 
 def isEven(integer):
@@ -38,17 +38,14 @@ class Map():
             self.columns.append(column)
 
         #select starting location for town
-        town_loc = [int(random.triangular(0,n_cols)),
-                    int(random.triangular(0,n_rows))]
+        start_loc = [   int(random.triangular(0,n_cols)),
+                        int(random.triangular(0,n_rows))]
                     
+        self.start_tile = self.tileAt(start_loc)
+        self.start_tile.setTerrain(Terrain.GRASS)
+        self.start_tile.addUnit(UnitType.SETTLER)
 
-        town_tile = self.tileAt(town_loc)
-        town_tile.setTerrain(Terrain.GRASS)
-        town_tile.feature = Feature.TOWN
-
-        self.start_tile = town_tile
-
-        self.generateLandmassAround(town_loc)
+        self.generateLandmassAround(start_loc)
         self.generateForests()
 
         self.selected_tile = None
@@ -109,7 +106,7 @@ class Map():
     generation algorithms)
     """
     def notVisited(self, tile):
-        if (not tile.visited) and tile.depth == -1:
+        if (not tile.visited):
             return True
         else:
             return False

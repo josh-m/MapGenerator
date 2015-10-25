@@ -1,10 +1,12 @@
+
+#OUTSTANDING BUGS: Unit doesn't show up until first scroll.
 import pyglet
-from pyglet.window import key
+from pyglet.window import key, mouse
 
 import math
 from copy import deepcopy
 
-from definitions import DiagDir, Terrain, Feature
+from definitions import DiagDir, Terrain, Feature, UnitType
 from constants import  (MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, UI_PANEL_WIDTH,
                         DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED)
 from util import isEven
@@ -25,81 +27,19 @@ class GameWindow(pyglet.window.Window):
         self.map = map
         self.turn = 1
         
-        self.fps_display = pyglet.window.FPSDisplay(self)
-        self._show_fps = True
-
-        self.batch = pyglet.graphics.Batch()
-        self.terrain_group = pyglet.graphics.OrderedGroup(0)
-        self.feature_group = pyglet.graphics.OrderedGroup(1)
-        self.ui_group = pyglet.graphics.OrderedGroup(2)
-
-        self.draw_list = list()
-
-        self.cam_pos = [0,0]
-        self.centerCameraOnTile(self.map.start_tile)
-        self.cam_dx = 0
-        self.cam_dy = 0
-        self.scroll_dir = DiagDir.NONE
-        self.ul_idx = [0,0]
-
-        #UI text
-        self.turn_label = pyglet.text.Label('Turn: 1', font_name='Arial',
-                                        font_size=24, x=MAP_DISPLAY_WIDTH+10,
-                                        y=WINDOW_HEIGHT, anchor_x='left', anchor_y='top',
-                                        color = (0,0,0,255))
-                                        
-        self.terrain_label = pyglet.text.Label('Terrain: None', font_name='Arial',
-                                        font_size=16, x=MAP_DISPLAY_WIDTH+10,
-                                        y=WINDOW_HEIGHT-40, anchor_x='left', anchor_y='top',
-                                        color = (0,0,0,255))
-                              
-        self.selection_sprite = pyglet.sprite.Sprite(img = resources.selection_image,
-                                                    batch=self.batch,
-                                                    group=self.ui_group)
-        self.selection_sprite.x = -5000
-        self.selection_sprite.y = -5000
-
-
-
+        self.__initializeGraphics()
+        self.__initializeCamera()
+        self.__initializeUI()
+     
         pyglet.clock.schedule_interval(self.update, 1/45.0)
-
-        #determine index of top right tile based on initial camera
-        self.cam_idx = pixelPosToMapLoc(self.cam_pos)
-        
-        #push cam_idx up and left for seamless scrolling
-        if self.cam_idx[0] > 1:
-            self.cam_idx[0] -= 2
-
-        if self.cam_idx[1] > 0:
-            self.cam_idx[1] -=1
-
-
-        #add to draw batch
-        for i in range(self.cam_idx[0], min(self.cam_idx[0]+DRAW_X, len(map.columns))):
-            self.addDrawColumn(i)
 
     def on_draw(self):
         self.clear()
         self.batch.draw()
         if self._show_fps:
             self.fps_display.draw()
-        
-        #UI sidebar placeholder
-        
-        pyglet.graphics.draw(
-                4, pyglet.gl.GL_QUADS,
-                ('v2f',
-                    (MAP_DISPLAY_WIDTH,WINDOW_HEIGHT,
-                    MAP_DISPLAY_WIDTH,0,
-                    MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,0,
-                    MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,WINDOW_HEIGHT
-                    )))
-        
-        
-        self.turn_label.draw()
-        self.terrain_label.draw()
-            
-            
+        self.__drawUI()
+
     def update(self, dt):
         if self.scroll_dir != DiagDir.NONE:
             self.scroll(self.scroll_dir)
@@ -112,41 +52,14 @@ class GameWindow(pyglet.window.Window):
             self.turn_label.text = 'Turn: ' + str(self.turn)
 
     def on_mouse_press(self,x,y,button,modifiers):
-        min_distance = 5000000
-        min_pos = [0,0]
-        distance = 0.0
-
-        #debugging
-        min_sprite = None
-
-        #TODO: lower cost of minimizing distance
-        for sprite in self.draw_list:
-            distance = math.sqrt( (sprite.x - x)**2 + (sprite.y - y)**2)
-            if distance < min_distance:
-                min_distance = distance
-                min_pos = [sprite.x, sprite.y]
-                min_sprite = sprite
-        
-        self.selection_sprite.x = min_pos[0]
-        self.selection_sprite.y = min_pos[1]
-        
-        #selected_idx = (int(min_sprite.x), int(min_sprite.y))
-        self.selected_tile = self.map.tileAt(min_sprite.map_pos)
-        
-        #determine terrain and update label
-        if self.selected_tile.terrain == Terrain.WATER:
-            self.terrain_label.text = 'Terrain: Ocean'
-        elif self.selected_tile.terrain == Terrain.GRASS:
-            self.terrain_label.text = 'Terrain: Grassland'
-        else:
-            self.terrain_labe.text = 'Terrain: Unknown'
-        
-        print("Selected Tile INDEX:" + str(min_sprite.map_pos) +
-                " pixel pos:" + str(min_sprite.x) +","+str(min_sprite.y))
-
-        print("draw_list length:" + str(len(self.draw_list)))
-        
-
+        if button == mouse.LEFT:
+            self.selected_tile = self.determineClickedTile(x,y)
+            self.updateSelectedTileUI()
+        elif button == mouse.RIGHT:
+            self.selected_tile = None
+            self.selection_sprite.x = -9999
+            self.updateSelectedTileUI()
+              
     def on_mouse_motion(self,x,y,dx,dy):
         self.scroll_dir = determine_scroll_dir(x,y)
 
@@ -223,33 +136,54 @@ class GameWindow(pyglet.window.Window):
         assert(len(map_row) >= DRAW_X)
 
         for tile in map_row:
+            self.addTileSprites(tile)
+            
+    def addDrawColumn(self, col_idx):
+        map_col = self.map.column(  col_idx,
+                                    start_row=self.cam_idx[1],
+                                    end_row=self.cam_idx[1]+DRAW_Y)
+        assert(len(map_col) >= DRAW_Y)
+
+        for tile in map_col:
+            self.addTileSprites(tile)
+    
+    def addTileSprites(self, tile):
+
+        if tile.terrain != None:
             terr_sprite = TileSprite(   map_pos = tile.getMapPos(),
-                                        img = tile.terr_img,
+                                        img = tile.terrainImg(),
                                         batch = self.batch,
                                         group = self.terrain_group)
-            pos = tile.getPixPos()
+            pos = tile.getAbsolutePixelPos()
             terr_sprite.x = (pos[0] - self.cam_pos[0])
             terr_sprite.y = (pos[1] + self.cam_pos[1])
 
             self.draw_list.append(terr_sprite)
 
-            if tile.feature != None:
-                ftr_sprite = TileSprite( map_pos = tile.getMapPos(),
-                                        img = tile.featureImg(),
-                                        batch = self.batch,
-                                        group = self.feature_group)
-                pos = tile.getPixPos()
-                ftr_sprite.x = pos[0] - self.cam_pos[0]
-                ftr_sprite.y = pos[1] + self.cam_pos[1]
-                if tile.feature == Feature.FOREST:
-                    ftr_sprite.scale = 0.8
-                self.draw_list.append(ftr_sprite)
-
+        if tile.feature != None:
+            ftr_sprite = TileSprite( map_pos = tile.getMapPos(),
+                                    img = tile.featureImg(),
+                                    batch = self.batch,
+                                    group = self.feature_group)
+            pos = tile.getAbsolutePixelPos()
+            ftr_sprite.x = pos[0] - self.cam_pos[0]
+            ftr_sprite.y = pos[1] + self.cam_pos[1]
+            if tile.feature == Feature.FOREST:
+                ftr_sprite.scale = 0.8
+            self.draw_list.append(ftr_sprite)
+            
+        if tile.unit != None:
+            print("addTileSprites: adding unit sprite!")
+            unit_sprite = TileSprite( map_pos = tile.getMapPos(),
+                                    img = tile.unitImg(),
+                                    batch = self.batch,
+                                    group = self.unit_group)
+            self.draw_list.append(unit_sprite)
+                
     def removeDrawRow(self, row):
         #Remove sprites from right
         to_remove = list(filter(
                 lambda x: isInRow(x, row), self.draw_list))
-        #assert(len(to_remove) >= 10)
 
         for sprite in to_remove:
             self.draw_list.remove(sprite)
@@ -258,42 +192,11 @@ class GameWindow(pyglet.window.Window):
     def removeDrawColumn(self, col):
         to_remove = list(filter(
                 lambda x: isInColumn(x, col), self.draw_list))
-        #assert(len(to_remove) >= 10)
 
         for sprite in to_remove:
             self.draw_list.remove(sprite)
             sprite.delete() #immediately removes sprite from video memory
-
-    def addDrawColumn(self, col_idx):
-        map_col = self.map.column(  col_idx,
-                                    start_row=self.cam_idx[1],
-                                    end_row=self.cam_idx[1]+DRAW_Y)
-        assert(len(map_col) >= DRAW_Y)
-
-        for tile in map_col:
-            terr_sprite = TileSprite(   map_pos = tile.getMapPos(),
-                                        img = tile.terr_img,
-                                        batch = self.batch,
-                                        group = self.terrain_group)
-            pos = tile.getPixPos()
-            terr_sprite.x = (pos[0] - self.cam_pos[0])
-            terr_sprite.y = (pos[1] + self.cam_pos[1])
-
-            self.draw_list.append(terr_sprite)
-
-            if tile.feature != None:
-                ftr_sprite = TileSprite( map_pos = tile.getMapPos(),
-                                        img = tile.featureImg(),
-                                        batch = self.batch,
-                                        group = self.feature_group)
-                pos = tile.getPixPos()
-                ftr_sprite.x = pos[0] - self.cam_pos[0]
-                ftr_sprite.y = pos[1] + self.cam_pos[1]
-                if tile.feature == Feature.FOREST:
-                    ftr_sprite.scale = 0.8
-
-                self.draw_list.append(ftr_sprite)
-
+        
     def centerCameraOnSprite(self, sprite):
         pos = [0,0]
         pos = mapLocToPixelPos(sprite.map_pos)
@@ -309,7 +212,7 @@ class GameWindow(pyglet.window.Window):
 
     def centerCameraOnTile(self, tile):
         pos = [0,0]
-        pos = tile.getPixPos()
+        pos = tile.getAbsolutePixelPos()
 
         pos[0] -= MAP_DISPLAY_WIDTH/2
         pos[1] = -pos[1]
@@ -319,6 +222,116 @@ class GameWindow(pyglet.window.Window):
         pos[1] += WINDOW_HEIGHT/2
 
         self.cam_pos = pos
+    
+    def determineClickedTile(self, mouse_x, mouse_y):
+        min_distance = 9999999
+        min_pos = [0,0]
+        distance = 0.0
+        min_sprite = None
+
+        for sprite in self.draw_list:
+            distance = math.sqrt( (sprite.x - mouse_x)**2 + (sprite.y - mouse_y)**2)
+            if distance < min_distance:
+                min_distance = distance
+                min_pos = [sprite.x, sprite.y]
+                min_sprite = sprite
+        
+        self.selection_sprite.x = min_pos[0]
+        self.selection_sprite.y = min_pos[1]
+        
+        return self.map.tileAt(min_sprite.map_pos)
+    
+    def __initializeGraphics(self):
+        self.batch = pyglet.graphics.Batch()
+        self.terrain_group = pyglet.graphics.OrderedGroup(0)
+        self.feature_group = pyglet.graphics.OrderedGroup(1)
+        self.unit_group = pyglet.graphics.OrderedGroup(2)
+        self.ui_group = pyglet.graphics.OrderedGroup(3)
+
+        self.draw_list = list()
+        
+        self.selection_sprite = pyglet.sprite.Sprite(
+            img = resources.selection_image,
+            batch=self.batch,
+            group=self.ui_group
+        )
+        self.selection_sprite.x = -9999
+        
+    def __initializeCamera(self):
+        self.cam_pos = [0,0]
+        self.centerCameraOnTile(self.map.start_tile)
+        self.cam_dx = 0
+        self.cam_dy = 0
+        self.scroll_dir = DiagDir.NONE
+        
+        #Determine index of top right tile based on initial camera
+        self.cam_idx = pixelPosToMapLoc(self.cam_pos)
+        
+        #Adjust the camera to keep map edges offscreen
+        if self.cam_idx[0] > 1:
+            self.cam_idx[0] -= 2
+        if self.cam_idx[1] > 0:
+            self.cam_idx[1] -=1
+            
+        #Add sprites within camera to the draw batch
+        for i in range(self.cam_idx[0], min(self.cam_idx[0]+DRAW_X, len(self.map.columns))):
+            self.addDrawColumn(i)
+    
+    def __initializeUI(self):
+        self.turn_label = UiLabel('Turn: 1', 0)
+        self.terrain_label = UiLabel('Terrain: None', 1)
+        self.feature_label = UiLabel('Feature: None', 2)
+        self.unit_label = UiLabel('Unit: None', 3)
+
+        self.fps_display = pyglet.window.FPSDisplay(self)
+        self._show_fps = True
+    
+    def __drawUI(self):
+        pyglet.graphics.draw(
+                4, pyglet.gl.GL_QUADS,
+                ('v2f',
+                    (MAP_DISPLAY_WIDTH,WINDOW_HEIGHT,
+                    MAP_DISPLAY_WIDTH,0,
+                    MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,0,
+                    MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,WINDOW_HEIGHT
+                    )))
+        self.turn_label.draw()
+        self.terrain_label.draw()
+        self.feature_label.draw()
+        self.unit_label.draw()
+        
+    def updateSelectedTileUI(self):
+        if (not self.selected_tile):
+            self.terrain_label.text = 'Terrain: None'
+            self.feature_label.text = 'Feature: None'
+            self.unit_label.text = 'Unit: None'
+            return
+        
+        #TODO: have string associations for these enumerations
+        if self.selected_tile.terrain == Terrain.WATER:
+            self.terrain_label.text = 'Terrain: Ocean'
+        elif self.selected_tile.terrain == Terrain.GRASS:
+            self.terrain_label.text = 'Terrain: Grassland'
+        else:
+            self.terrain_label.text = 'Terrain: Unknown'
+            
+        #determine feature, update label
+        if self.selected_tile.feature == None:
+            self.feature_label.text = 'Feature: None'
+        elif self.selected_tile.feature == Feature.FOREST:
+            self.feature_label.text = 'Feature: Forest'
+        elif self.selected_tile.feature == Feature.TOWN:
+            self.feature_label.text = 'Feature: Town'
+        else:
+            self.feature_label.text = 'Feature: Unknown'
+            
+        #determine unit, update label
+        if self.selected_tile.unit == None:
+            self.unit_label.text = 'Unit: None'
+        elif self.selected_tile.unit == UnitType.SETTLER:
+            self.unit_label.text = 'Unit: Settler'
+        else:
+            self.unit_label.text = 'Unit: Unknown'
 
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:
@@ -327,7 +340,6 @@ def isInRow(t_sprite, row):
         return False
 
 def isInColumn(t_sprite, column):
-    #print("scol:"+str(t_sprite.map_pos[1])+" col:"+str(column))
     if t_sprite.map_pos[0] == column:
         return True
     else:
@@ -428,3 +440,15 @@ def mapLocToPixelPos(loc, relative = False):
         return [x_pos - self.cam[0], y_pos - self.cam[1]]
     else:
         return [x_pos, y_pos]
+        
+class UiLabel(pyglet.text.Label):
+    def __init__(self, text, order):
+        super(UiLabel, self).__init__(  text, font_name='Arial',
+                                        font_size=16, x=MAP_DISPLAY_WIDTH+10,
+                                        y=WINDOW_HEIGHT-(order*25),
+                                        anchor_x='left', anchor_y='top',
+                                        color = (0,0,0,255))
+                                        
+                                        
+                                        
+                                        
