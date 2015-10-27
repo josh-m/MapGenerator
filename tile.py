@@ -23,7 +23,7 @@ class Tile():
 
     def setNeighbor(self, dir, tile):
         self.neighbors[dir] = tile
-
+        
     def getImageList(self):
         
         ls = list()

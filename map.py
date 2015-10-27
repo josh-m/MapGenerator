@@ -256,7 +256,7 @@ class Map():
             _y = (pos_y - 1) % self.size[1]
 
         elif (dir == HexDir.UR):
-            x = (pos_x + 1) % self.size[0]
+            _x = (pos_x + 1) % self.size[0]
 
             if isEven(pos_x):
                 _y = pos_y

@@ -6,7 +6,7 @@ from pyglet.window import key, mouse
 import math
 from copy import deepcopy
 
-from definitions import DiagDir, Terrain, Feature, UnitType
+from definitions import DiagDir, Terrain, Feature, UnitType, HexDir
 from constants import  (MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, UI_PANEL_WIDTH,
                         DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED)
 from util import isEven
@@ -26,6 +26,11 @@ class GameWindow(pyglet.window.Window):
 
         self.map = map
         self.turn = 1
+        self.active_tile = None
+        self.selected_unit_tile = None
+        self.to_draw_path = False
+        self.path_start_pos = [0,0]
+        self.path_end_pos = [0,0]
         
         self.__initializeGraphics()
         self.__initializeCamera()
@@ -39,6 +44,7 @@ class GameWindow(pyglet.window.Window):
         if self._show_fps:
             self.fps_display.draw()
         self.__drawUI()
+        self.__drawPaths()
 
     def update(self, dt):
         if self.scroll_dir != DiagDir.NONE:
@@ -53,16 +59,37 @@ class GameWindow(pyglet.window.Window):
 
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
-            self.selected_tile = self.determineClickedTile(x,y)
-            self.updateSelectedTileUI()
+            clicked_tile = self.determineClosestTile(x,y)
+            if clicked_tile.unit:
+                self.selection_sprite.x = clicked_tile.abs_pixel_pos[0] - self.cam_pos[0]
+                self.selection_sprite.y = clicked_tile.abs_pixel_pos[1] + self.cam_pos[1]
+            
         elif button == mouse.RIGHT:
             self.selected_tile = None
             self.selection_sprite.x = -9999
-            self.updateSelectedTileUI()
+            self.to_draw_path = False
+            self.updateActiveTileUI()
+            
+        elif button == mouse.MIDDLE:
+            None
+            """
+            self.to_draw_path = True
+            self.drawPathInDirection(deepcopy(self.selected_tile), HexDir.UR)
+            """  
               
     def on_mouse_motion(self,x,y,dx,dy):
         self.scroll_dir = determine_scroll_dir(x,y)
 
+        self.active_tile = self.determineClosestTile(x,y)
+        #print("selected_tile idx: "+str(self.selected_tile.pos[0])+", "+str(self.selected_tile.pos[1]))
+        self.updateActiveTileUI()
+        
+        #was a unit selected?
+        """
+        if self.selected_tile.unit != None:
+            print("Unit selected")
+        """
+            
     def on_mouse_leave(self,x,y):
         self.scroll_dir = DiagDir.NONE
 
@@ -92,6 +119,7 @@ class GameWindow(pyglet.window.Window):
 
         self.selection_sprite.x -= dx
         self.selection_sprite.y -= dy
+        print ("x:"+str(self.selection_sprite.x)+" y:"+str(self.selection_sprite.y))
 
         
         #do columns need to be updated?
@@ -137,7 +165,8 @@ class GameWindow(pyglet.window.Window):
 
         for tile in map_row:
             self.addTileSprites(tile)
-            
+    
+    
     def addDrawColumn(self, col_idx):
         map_col = self.map.column(  col_idx,
                                     start_row=self.cam_idx[1],
@@ -173,7 +202,6 @@ class GameWindow(pyglet.window.Window):
             self.draw_list.append(ftr_sprite)
             
         if tile.unit != None:
-            print("addTileSprites: adding unit sprite!")
             unit_sprite = TileSprite( map_pos = tile.getMapPos(),
                                     img = tile.unitImg(),
                                     batch = self.batch,
@@ -181,6 +209,8 @@ class GameWindow(pyglet.window.Window):
             pos = tile.getAbsolutePixelPos()
             unit_sprite.x = pos[0] - self.cam_pos[0]
             unit_sprite.y = pos[1] + self.cam_pos[1]
+            if tile.unit == UnitType.SETTLER:
+                unit_sprite.scale = 0.8
             self.draw_list.append(unit_sprite)
                 
     def removeDrawRow(self, row):
@@ -226,7 +256,7 @@ class GameWindow(pyglet.window.Window):
 
         self.cam_pos = pos
     
-    def determineClickedTile(self, mouse_x, mouse_y):
+    def determineClosestTile(self, mouse_x, mouse_y):
         min_distance = 9999999
         min_pos = [0,0]
         distance = 0.0
@@ -238,12 +268,25 @@ class GameWindow(pyglet.window.Window):
                 min_distance = distance
                 min_pos = [sprite.x, sprite.y]
                 min_sprite = sprite
-        
-        self.selection_sprite.x = min_pos[0]
-        self.selection_sprite.y = min_pos[1]
-        
+                
         return self.map.tileAt(min_sprite.map_pos)
     
+    #draws a path from the tile in the HexDir dir
+    def drawPathInDirection(self, tile, dir):
+        if not tile:   
+            return
+        dst_tile_idx = self.map.neighborAt(tile.pos, HexDir.UR)
+        dst_pix_pos = self.map.tileAt(dst_tile_idx).getAbsolutePixelPos()
+
+        src_pix_pos = tile.getAbsolutePixelPos()
+        self.path_start_pos[0] = src_pix_pos[0] - self.cam_pos[0]
+        self.path_start_pos[1] = src_pix_pos[1] + self.cam_pos[1]
+        
+        self.path_end_pos[0] = dst_pix_pos[0] - self.cam_pos[0]
+        self.path_end_pos[1] = dst_pix_pos[1] + self.cam_pos[1]
+        
+
+                    
     def __initializeGraphics(self):
         self.batch = pyglet.graphics.Batch()
         self.terrain_group = pyglet.graphics.OrderedGroup(0)
@@ -251,7 +294,7 @@ class GameWindow(pyglet.window.Window):
         self.unit_group = pyglet.graphics.OrderedGroup(2)
         self.ui_group = pyglet.graphics.OrderedGroup(3)
 
-        self.draw_list = list()
+        self.draw_list = list() #TODO: remove once Tiles are responsible for their own sprites
         
         self.selection_sprite = pyglet.sprite.Sprite(
             img = resources.selection_image,
@@ -303,35 +346,46 @@ class GameWindow(pyglet.window.Window):
         self.feature_label.draw()
         self.unit_label.draw()
         
-    def updateSelectedTileUI(self):
-        if (not self.selected_tile):
+
+            
+    def __drawPaths(self):
+        if self.to_draw_path:
+            pyglet.graphics.draw(
+                    2, pyglet.gl.GL_LINES,
+                    ('v2f',
+                        (self.path_start_pos[0] , self.path_start_pos[1],
+                        self.path_end_pos[0], self.path_end_pos[1],
+                        )))    
+        
+    def updateActiveTileUI(self):
+        if (not self.active_tile):
             self.terrain_label.text = 'Terrain: None'
             self.feature_label.text = 'Feature: None'
             self.unit_label.text = 'Unit: None'
             return
         
         #TODO: have string associations for these enumerations
-        if self.selected_tile.terrain == Terrain.WATER:
+        if self.active_tile.terrain == Terrain.WATER:
             self.terrain_label.text = 'Terrain: Ocean'
-        elif self.selected_tile.terrain == Terrain.GRASS:
+        elif self.active_tile.terrain == Terrain.GRASS:
             self.terrain_label.text = 'Terrain: Grassland'
         else:
             self.terrain_label.text = 'Terrain: Unknown'
             
         #determine feature, update label
-        if self.selected_tile.feature == None:
+        if self.active_tile.feature == None:
             self.feature_label.text = 'Feature: None'
-        elif self.selected_tile.feature == Feature.FOREST:
+        elif self.active_tile.feature == Feature.FOREST:
             self.feature_label.text = 'Feature: Forest'
-        elif self.selected_tile.feature == Feature.TOWN:
+        elif self.active_tile.feature == Feature.TOWN:
             self.feature_label.text = 'Feature: Town'
         else:
             self.feature_label.text = 'Feature: Unknown'
             
         #determine unit, update label
-        if self.selected_tile.unit == None:
+        if self.active_tile.unit == None:
             self.unit_label.text = 'Unit: None'
-        elif self.selected_tile.unit == UnitType.SETTLER:
+        elif self.active_tile.unit == UnitType.SETTLER:
             self.unit_label.text = 'Unit: Settler'
         else:
             self.unit_label.text = 'Unit: Unknown'
