@@ -61,7 +61,7 @@ class DisplayPanel():
             self.unit_label.text = 'Unit: Unknown'
     
     def updateTurnLabel(self, turn):
-        self.turn_label = "Turn: " + str(turn)
+        self.turn_label.text = "Turn: " + str(turn)
         
 class UiLabel(pyglet.text.Label):
     def __init__(self, text, order):

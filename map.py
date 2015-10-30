@@ -13,9 +13,7 @@ import random
 from tile import Tile
 from definitions import HexDir, Terrain, Feature, UnitType, UiElement
 from constants import MAP_COL_COUNT, MAP_ROW_COUNT
-
-def isEven(integer):
-    return not (integer % 2)
+from util import isEven
 
     
 class Map():
