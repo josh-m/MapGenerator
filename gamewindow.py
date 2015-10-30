@@ -1,5 +1,4 @@
 
-#OUTSTANDING BUGS: Unit doesn't show up until first scroll.
 import pyglet
 from pyglet.window import key, mouse
 
@@ -12,7 +11,7 @@ from constants import  (MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, UI_PANEL_WIDTH,
 from util import isEven
 import resources
 from tilesprite import TileSprite
-
+from display_panel import DisplayPanel
 
 #amount of pixels
 TILE_THRESHOLD_X = 54
@@ -35,15 +34,16 @@ class GameWindow(pyglet.window.Window):
         self.__initializeGraphics()
         self.__initializeCamera()
         self.__initializeUI()
+        self.display_panel = DisplayPanel()
      
         pyglet.clock.schedule_interval(self.update, 1/45.0)
 
     def on_draw(self):
         self.clear()
         self.batch.draw()
+        self.display_panel.draw()
         if self._show_fps:
             self.fps_display.draw()
-        self.__drawUI()
         self.__drawPaths()
 
     def update(self, dt):
@@ -55,7 +55,7 @@ class GameWindow(pyglet.window.Window):
             self._show_fps = not self._show_fps
         elif symbol == key.SPACE:
             self.turn += 1
-            self.turn_label.text = 'Turn: ' + str(self.turn)
+            self.display_panel.updateTurnLabel(self.turn)
 
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
@@ -65,30 +65,19 @@ class GameWindow(pyglet.window.Window):
                 self.selection_sprite.y = clicked_tile.abs_pixel_pos[1] + self.cam_pos[1]
             
         elif button == mouse.RIGHT:
-            self.selected_tile = None
+            self.active_tile = None
             self.selection_sprite.x = -9999
             self.to_draw_path = False
-            self.updateActiveTileUI()
+            self.display_panel.updateTileLabels(self.active_tile)
             
         elif button == mouse.MIDDLE:
-            None
-            """
-            self.to_draw_path = True
-            self.drawPathInDirection(deepcopy(self.selected_tile), HexDir.UR)
-            """  
+            None 
               
     def on_mouse_motion(self,x,y,dx,dy):
         self.scroll_dir = determine_scroll_dir(x,y)
 
         self.active_tile = self.determineClosestTile(x,y)
-        #print("selected_tile idx: "+str(self.selected_tile.pos[0])+", "+str(self.selected_tile.pos[1]))
-        self.updateActiveTileUI()
-        
-        #was a unit selected?
-        """
-        if self.selected_tile.unit != None:
-            print("Unit selected")
-        """
+        self.display_panel.updateTileLabels(self.active_tile)
             
     def on_mouse_leave(self,x,y):
         self.scroll_dir = DiagDir.NONE
@@ -119,8 +108,6 @@ class GameWindow(pyglet.window.Window):
 
         self.selection_sprite.x -= dx
         self.selection_sprite.y -= dy
-        print ("x:"+str(self.selection_sprite.x)+" y:"+str(self.selection_sprite.y))
-
         
         #do columns need to be updated?
         if self.cam_dx > TILE_THRESHOLD_X:
@@ -324,29 +311,8 @@ class GameWindow(pyglet.window.Window):
             self.addDrawColumn(i)
     
     def __initializeUI(self):
-        self.turn_label = UiLabel('Turn: 1', 0)
-        self.terrain_label = UiLabel('Terrain: None', 1)
-        self.feature_label = UiLabel('Feature: None', 2)
-        self.unit_label = UiLabel('Unit: None', 3)
-
         self.fps_display = pyglet.window.FPSDisplay(self)
         self._show_fps = True
-    
-    def __drawUI(self):
-        pyglet.graphics.draw(
-                4, pyglet.gl.GL_QUADS,
-                ('v2f',
-                    (MAP_DISPLAY_WIDTH,WINDOW_HEIGHT,
-                    MAP_DISPLAY_WIDTH,0,
-                    MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,0,
-                    MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,WINDOW_HEIGHT
-                    )))
-        self.turn_label.draw()
-        self.terrain_label.draw()
-        self.feature_label.draw()
-        self.unit_label.draw()
-        
-
             
     def __drawPaths(self):
         if self.to_draw_path:
@@ -358,37 +324,7 @@ class GameWindow(pyglet.window.Window):
                         )))    
         
     def updateActiveTileUI(self):
-        if (not self.active_tile):
-            self.terrain_label.text = 'Terrain: None'
-            self.feature_label.text = 'Feature: None'
-            self.unit_label.text = 'Unit: None'
-            return
-        
-        #TODO: have string associations for these enumerations
-        if self.active_tile.terrain == Terrain.WATER:
-            self.terrain_label.text = 'Terrain: Ocean'
-        elif self.active_tile.terrain == Terrain.GRASS:
-            self.terrain_label.text = 'Terrain: Grassland'
-        else:
-            self.terrain_label.text = 'Terrain: Unknown'
-            
-        #determine feature, update label
-        if self.active_tile.feature == None:
-            self.feature_label.text = 'Feature: None'
-        elif self.active_tile.feature == Feature.FOREST:
-            self.feature_label.text = 'Feature: Forest'
-        elif self.active_tile.feature == Feature.TOWN:
-            self.feature_label.text = 'Feature: Town'
-        else:
-            self.feature_label.text = 'Feature: Unknown'
-            
-        #determine unit, update label
-        if self.active_tile.unit == None:
-            self.unit_label.text = 'Unit: None'
-        elif self.active_tile.unit == UnitType.SETTLER:
-            self.unit_label.text = 'Unit: Settler'
-        else:
-            self.unit_label.text = 'Unit: Unknown'
+        None
 
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:
@@ -498,13 +434,7 @@ def mapLocToPixelPos(loc, relative = False):
     else:
         return [x_pos, y_pos]
         
-class UiLabel(pyglet.text.Label):
-    def __init__(self, text, order):
-        super(UiLabel, self).__init__(  text, font_name='Arial',
-                                        font_size=16, x=MAP_DISPLAY_WIDTH+10,
-                                        y=WINDOW_HEIGHT-(order*25),
-                                        anchor_x='left', anchor_y='top',
-                                        color = (0,0,0,255))
+
                                         
                                         
                                         
