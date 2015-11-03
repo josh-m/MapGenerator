@@ -116,19 +116,7 @@ class Map():
         for col in self.columns:
             for tile in col:
                 tile.visited = False
-
-    """
-    isValidCityLocation:
-    Tests whether a tile is a valid place for a city to be built.
-    """
-    #TODO: Allow additional terrain types.
-    #TODO: Check if a city is already present, or other obstacle preventing settling.
-    def isValidCityLocation(self, tile):
-        return tile.terrain == Terrain.GRASS
-
-    def isValidForestLocation(self, tile):
-        return tile.terrain == Terrain.GRASS
-        
+    
     #
     #World building methods
     #
@@ -180,7 +168,7 @@ class Map():
         gen_chance = 7.0
         land = list()
         for col in self.columns:
-            land += filter(self.isValidForestLocation, col)
+            land += [tile for tile in col if tile.isValidForestLocation()]
 
         for tile in land:
             if (random.uniform(0, 100.0) < gen_chance) and (not tile.feature):
@@ -199,7 +187,7 @@ class Map():
         if (random.uniform(0,99.9) < gen_chance):
             tile.feature = Feature.FOREST
             neighbors = self.neighborsOf(tile)
-            neighbors = filter(self.isValidForestLocation, neighbors)
+            neighbors = [_tile for _tile in neighbors if _tile.isValidForestLocation()]
             neighbors = filter(self.notVisited, neighbors)
         
             for neighbor_tile in neighbors:
@@ -281,3 +269,81 @@ class Map():
                 _y = pos_y
 
         return [_x,_y]
+
+    #Returns a list of HexDir that constitutes a best
+    #land path from start to end.
+    def determineShortestLandPath(self, start, end):
+        current_tile = start
+        path_list = list()
+        if not end.isEnterableByLandUnit():
+            return path_list
+            
+        """
+        neighbors = self.neighborsOf(current_tile)
+        print(str(len(neighbors)))
+        next_path = self.findNextBestLandPath(start, end, neighbors)
+        """
+        path_list = self.constructLandPath(start, end, path_list)
+        
+        self.resetAllVisited()
+        return path_list
+    
+    
+    def constructLandPath(self, curr, end, path):
+        curr_idx = curr.pos
+        end_idx = end.pos
+            
+        neighbors = self.neighborsOf(curr)
+        neighbors = [tile for tile in neighbors if tile.isEnterableByLandUnit()]
+        print(str(len(neighbors)))
+        
+        #next_move = self.nextBestMove(curr, end)
+    
+    #Returns the HexDir that describes the general direction from start to end
+    def directionTo(self, start, end):
+        start_x = start.pos[0]
+        start_y = start.pos[1]
+        end_x = start.pos[0]
+        end_y = start.pos[1]
+        dir = None
+        
+        if start_x == end_x:
+            if start_y < end_y:
+                return HexDir.U
+            else:
+                return HexDir.D
+        
+        if start_x < end_x:
+            if isEven(start_x):
+                if end_y <= start_y:
+                    return HexDir.UR
+                else:
+                    return HexDir.DR
+            else:
+                if end_y < start_y:
+                    return HexDir.UR
+                else:
+                    return HexDir.DR
+        else:
+            if isEven(start_x):
+                if end_y <= start_y:
+                    return HexDir.UL
+                else:
+                    return HexDir.DL
+            else:
+                if end_y < start_y:
+                    return HexDir.UL
+                else:
+                    return HexDir.DL                
+            
+            
+        
+        
+            
+            
+            
+            
+            
+            
+            
+            

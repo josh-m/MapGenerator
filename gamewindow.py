@@ -22,7 +22,6 @@ class GameWindow(pyglet.window.Window):
     def __init__(self, map, *args, **kwargs):
         super(GameWindow, self).__init__(   MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,
                                             WINDOW_HEIGHT, *args, **kwargs)
-
         self.map = map
         self.turn = 1
         self.active_tile = None
@@ -59,20 +58,26 @@ class GameWindow(pyglet.window.Window):
 
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
-            clicked_tile = self.determineClosestTile(x,y)
-            if clicked_tile.unit:
-                self.selection_sprite.x = clicked_tile.abs_pixel_pos[0] - self.cam_pos[0]
-                self.selection_sprite.y = clicked_tile.abs_pixel_pos[1] + self.cam_pos[1]
+            if self.selected_unit_tile:
+                clicked_tile = self.determineClosestTile(x,y)
+                if clicked_tile.isEnterableByLandUnit():
+                    print("A valid end location has been selected")
+                    path_list = self.map.determineShortestLandPath(self.selected_unit_tile, clicked_tile)
             
         elif button == mouse.RIGHT:
-            self.active_tile = None
+            self.selected_unit_tile = None
             self.selection_sprite.x = -9999
             self.to_draw_path = False
             self.display_panel.updateTileLabels(self.active_tile)
+
+    def on_mouse_release(self,x,y,button,modifiers):
+        if button == mouse.LEFT:
+            clicked_tile = self.determineClosestTile(x,y)
+            if len(clicked_tile.unit_list) > 0:
+                self.selected_unit_tile = clicked_tile
+                self.selection_sprite.x = clicked_tile.abs_pixel_pos[0] - self.cam_pos[0]
+                self.selection_sprite.y = clicked_tile.abs_pixel_pos[1] + self.cam_pos[1]
             
-        elif button == mouse.MIDDLE:
-            None 
-              
     def on_mouse_motion(self,x,y,dx,dy):
         self.scroll_dir = determine_scroll_dir(x,y)
 
@@ -83,6 +88,7 @@ class GameWindow(pyglet.window.Window):
         self.scroll_dir = DiagDir.NONE
 
     def scroll(self, dir):
+        #shift camera position
         dx=0
         dy=0
 
@@ -101,15 +107,16 @@ class GameWindow(pyglet.window.Window):
         self.cam_dx -= dx
         self.cam_dy -= dy
 
+        #adjust sprite positions to match camera
         for sprite in self.draw_list:
             sprite.x = sprite.pix_pos[0] - self.cam_pos[0]
             sprite.y = sprite.pix_pos[1] + self.cam_pos[1]
         
-
         self.selection_sprite.x -= dx
         self.selection_sprite.y -= dy
         
-        #do columns need to be updated?
+        #adjust columns and/or rows to be drawn,
+        #while updating the camera offsets
         if self.cam_dx > TILE_THRESHOLD_X:
             #print("shift left")
             self.cam_dx -= TILE_THRESHOLD_X
@@ -153,7 +160,6 @@ class GameWindow(pyglet.window.Window):
         for tile in map_row:
             self.addTileSprites(tile)
     
-    
     def addDrawColumn(self, col_idx):
         map_col = self.map.column(  col_idx,
                                     start_row=self.cam_idx[1],
@@ -164,7 +170,6 @@ class GameWindow(pyglet.window.Window):
             self.addTileSprites(tile)
     
     def addTileSprites(self, tile):
-
         if tile.terrain != None:
             terr_sprite = TileSprite(   map_pos = tile.getMapPos(),
                                         img = tile.terrainImg(),
@@ -188,7 +193,7 @@ class GameWindow(pyglet.window.Window):
                 ftr_sprite.scale = 0.8
             self.draw_list.append(ftr_sprite)
             
-        if tile.unit != None:
+        if len(tile.unit_list) > 0:
             unit_sprite = TileSprite( map_pos = tile.getMapPos(),
                                     img = tile.unitImg(),
                                     batch = self.batch,
@@ -196,7 +201,7 @@ class GameWindow(pyglet.window.Window):
             pos = tile.getAbsolutePixelPos()
             unit_sprite.x = pos[0] - self.cam_pos[0]
             unit_sprite.y = pos[1] + self.cam_pos[1]
-            if tile.unit == UnitType.SETTLER:
+            if tile.unit_list[0] == UnitType.SETTLER: #TODO: multiple units
                 unit_sprite.scale = 0.8
             self.draw_list.append(unit_sprite)
                 
@@ -272,8 +277,6 @@ class GameWindow(pyglet.window.Window):
         self.path_end_pos[0] = dst_pix_pos[0] - self.cam_pos[0]
         self.path_end_pos[1] = dst_pix_pos[1] + self.cam_pos[1]
         
-
-                    
     def __initializeGraphics(self):
         self.batch = pyglet.graphics.Batch()
         self.terrain_group = pyglet.graphics.OrderedGroup(0)
@@ -322,10 +325,10 @@ class GameWindow(pyglet.window.Window):
                         (self.path_start_pos[0] , self.path_start_pos[1],
                         self.path_end_pos[0], self.path_end_pos[1],
                         )))    
-        
-    def updateActiveTileUI(self):
-        None
 
+    def addDrawPath(start_tile, end_tile):
+        None
+                        
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:
         return True
@@ -337,8 +340,6 @@ def isInColumn(t_sprite, column):
         return True
     else:
         return False
-
-
 
 def determine_scroll_dir(mouse_x, mouse_y):
     scroll_dir = DiagDir.NONE
@@ -367,37 +368,6 @@ def determine_scroll_dir(mouse_x, mouse_y):
 
     return scroll_dir
 
-def whereOffscreen(sprite_x, sprite_y):
-    off_dir = DiagDir.NONE
-    OFF_MARGIN = 36
-
-    if sprite_x < -OFF_MARGIN:
-        if sprite_y < -OFF_MARGIN:
-            off_dir = DiagDir.DL
-        elif sprite_y > WINDOW_HEIGHT + OFF_MARGIN:
-            off_dir = DiagDir.UL
-        else:
-            off_dir = DiagDir.LEFT
-    elif sprite_x > MAP_DISPLAY_WIDTH + OFF_MARGIN:
-        if sprite_y < -OFF_MARGIN:
-            off_dir = DiagDir.DR
-        elif sprite_y > WINDOW_HEIGHT + OFF_MARGIN:
-            off_dir = DiagDir.UR
-        else:
-            off_dir = DiagDir.RIGHT
-    elif sprite_y < -OFF_MARGIN:
-        off_dir = DiagDir.DOWN
-    elif sprite_y > WINDOW_HEIGHT + OFF_MARGIN:
-        off_dir = DiagDir.UP
-
-    return off_dir
-
-def isOffscreen(sprite):
-    if whereOffscreen(sprite.x, sprite.y) != DiagDir.NONE:
-        return True
-    else:
-        return False
-
 def pixelPosToMapLoc(pix_pos):
     x_offset = 54
     y_offset = 72
@@ -412,9 +382,4 @@ def pixelPosToMapLoc(pix_pos):
     row_idx = row_idx / y_offset
 
     return [int(col_idx), int(row_idx)]
-        
-
-                                        
-                                        
-                                        
                                         

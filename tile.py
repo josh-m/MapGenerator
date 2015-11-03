@@ -15,7 +15,7 @@ class Tile():
         self.terrain = terr
         self.setTerrain(terr)
         self.feature = feature
-        self.unit = unit #TODO: allow multiple units
+        self.unit_list = list()
         self.ui_element = ui
 
         
@@ -50,7 +50,7 @@ class Tile():
         self.feature = feature
         
     def addUnit(self, unit):
-        self.unit = unit
+        self.unit_list.append(unit)
     
     def terrainImg(self):
         if self.terrain == Terrain.GRASS:
@@ -69,7 +69,7 @@ class Tile():
             return None
             
     def unitImg(self):
-        if self.unit == UnitType.SETTLER:
+        if self.unit_list[0] == UnitType.SETTLER: #TODO: multiple units
             return resources.settler_image
         else:
             return None
@@ -85,3 +85,18 @@ class Tile():
 
     def getAbsolutePixelPos(self):
         return deepcopy(self.abs_pixel_pos)
+        
+    """
+    isValidCityLocation:
+    Tests whether a tile is a valid place for a city to be built.
+    """
+    #TODO: Allow additional terrain types.
+    #TODO: Check if a city is already present, or other obstacle preventing settling.
+    def isValidCityLocation(self):
+        return self.terrain == Terrain.GRASS
+
+    def isValidForestLocation(self):
+        return self.terrain == Terrain.GRASS
+    
+    def isEnterableByLandUnit(self):
+        return self.terrain == Terrain.GRASS

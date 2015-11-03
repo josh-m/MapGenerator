@@ -8,6 +8,7 @@ class DisplayPanel():
         self.terrain_label = UiLabel('Terrain: None', 1)
         self.feature_label = UiLabel('Feature: None', 2)
         self.unit_label = UiLabel('Unit: None', 3)
+        self.index_label = UiLabel('Index: None', 4)
         
     def draw(self):
         pyglet.graphics.draw(
@@ -22,18 +23,24 @@ class DisplayPanel():
         self.terrain_label.draw()
         self.feature_label.draw()
         self.unit_label.draw()
+        self.index_label.draw()
     
     def updateTileLabels(self, tile):
         if (not tile):
             self.terrain_label.text = 'Terrain: None'
             self.feature_label.text = 'Feature: None'
             self.unit_label.text = 'Unit: None'
+            self.index_label.text = 'Index: None'
             return
         
         self.updateTerrainLabel(tile.terrain)
         self.updateFeatureLabel(tile.feature)
-        self.updateUnitLabel(tile.unit)
-        
+        if len(tile.unit_list) > 0:
+            self.updateUnitLabel(tile.unit_list[0]) #TODO: multiple units
+        else:
+            self.updateUnitLabel(None)
+        self.updateIndexLabel(tile.pos)
+            
     def updateTerrainLabel(self, terrain):
         if terrain == Terrain.WATER:
             self.terrain_label.text = 'Terrain: Ocean'
@@ -62,6 +69,13 @@ class DisplayPanel():
     
     def updateTurnLabel(self, turn):
         self.turn_label.text = "Turn: " + str(turn)
+        
+    def updateIndexLabel(self, pos):
+        self.index_label.text = ("Index: ["
+                                + str(pos[0])
+                                + ", "
+                                + str(pos[1])
+                                + "]")
         
 class UiLabel(pyglet.text.Label):
     def __init__(self, text, order):
