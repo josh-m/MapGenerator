@@ -59,10 +59,9 @@ class GameWindow(pyglet.window.Window):
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
             if self.selected_unit_tile:
-                clicked_tile = self.determineClosestTile(x,y)
-                if clicked_tile.isEnterableByLandUnit():
+                if self.active_tile.isEnterableByLandUnit():
                     print("A valid end location has been selected")
-                    self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, clicked_tile)
+                    self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, self.active_tile)
                     print("path list:")
                     print(str(self.path_list))
             
@@ -71,7 +70,18 @@ class GameWindow(pyglet.window.Window):
             self.selection_sprite.x = -9999
             del self.path_list[:]
             self.display_panel.updateTileLabels(self.active_tile)
-
+    
+    def on_mouse_drag(self, x,y, dx,dy, buttons, modifiers):
+        self.on_mouse_motion(x,y,dx,dy)
+    
+        if buttons & mouse.LEFT:
+            #Check if moused over (active) tile is different than the
+            #previous end of path
+            if self.selected_unit_tile:
+                if len(self.path_list) == 0 or self.active_tile.pos != self.path_list[-1]:
+                    self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, self.active_tile)
+                
+    
     def on_mouse_release(self,x,y,button,modifiers):
         if button == mouse.LEFT:
             clicked_tile = self.determineClosestTile(x,y)
@@ -342,9 +352,6 @@ class GameWindow(pyglet.window.Window):
                         )))
             
             path_start = path_end
-
-    def addDrawPath(start_tile, end_tile):
-        None
                         
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:
