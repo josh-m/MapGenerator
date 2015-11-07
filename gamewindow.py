@@ -383,7 +383,20 @@ class GameWindow(pyglet.window.Window):
                 )
                 label_list.append(label)
                 turn_count += 1
-        
+            elif tile_pos == self.path_list[-1]:
+                label_pix_pos = mapLocToPixelPos(tile_pos)
+                label_x = label_pix_pos[0] - self.cam_pos[0]
+                label_y = label_pix_pos[1] + self.cam_pos[1]
+                label = pyglet.text.Label(
+                    str(turn_count), font_name='Arial',
+                    font_size=16, x=label_x,
+                    y=label_y,
+                    anchor_x='center', anchor_y='center',
+                    color = (255,255,0,255)
+                )
+                label_list.append(label)
+                break
+            
             next_tile = self.map.tileAt(tile_pos)
             tile_cost = next_tile.move_cost
             unit_moves -= tile_cost
