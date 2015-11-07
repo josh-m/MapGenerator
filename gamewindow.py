@@ -28,7 +28,8 @@ class GameWindow(pyglet.window.Window):
         self.selected_unit_tile = None
         
         self.to_draw_path = False
-        self.path_list = list()
+        self.path_list = list() #positions of unit move path
+        self.move_labels = list()
         
         self.__initializeGraphics()
         self.__initializeCamera()
@@ -40,10 +41,10 @@ class GameWindow(pyglet.window.Window):
     def on_draw(self):
         self.clear()
         self.batch.draw()
-        self.display_panel.draw()
         if self._show_fps:
             self.fps_display.draw()
         self.__drawPaths()
+        self.display_panel.draw()
 
     def update(self, dt):
         if self.scroll_dir != DiagDir.NONE:
@@ -60,11 +61,10 @@ class GameWindow(pyglet.window.Window):
         if button == mouse.LEFT:
             if self.selected_unit_tile:
                 if self.active_tile.isEnterableByLandUnit():
-                    print("A valid end location has been selected")
                     self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, self.active_tile)
-                    print("path list:")
-                    print(str(self.path_list))
-            
+                    if len(self.path_list) >0:
+                        self.move_labels = self.createMoveLabels()
+                    
         elif button == mouse.RIGHT:
             self.selected_unit_tile = None
             self.selection_sprite.x = -9999
@@ -80,7 +80,8 @@ class GameWindow(pyglet.window.Window):
             if self.selected_unit_tile:
                 if len(self.path_list) == 0 or self.active_tile.pos != self.path_list[-1]:
                     self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, self.active_tile)
-                
+                    if len(self.path_list) > 0:
+                        self.move_labels = self.createMoveLabels()
     
     def on_mouse_release(self,x,y,button,modifiers):
         if button == mouse.LEFT:
@@ -126,6 +127,10 @@ class GameWindow(pyglet.window.Window):
         
         self.selection_sprite.x -= dx
         self.selection_sprite.y -= dy
+        
+        for label in self.move_labels:
+            label.x -= dx
+            label.y -= dy
         
         #adjust columns and/or rows to be drawn,
         #while updating the camera offsets
@@ -352,7 +357,39 @@ class GameWindow(pyglet.window.Window):
                         )))
             
             path_start = path_end
+            
+        for label in self.move_labels:
+            label.draw()
                         
+    def createMoveLabels(self):
+        unit_moves = 2 #TODO: placeholder, replace with unit's speed
+        start_pos = self.path_list[0]
+        turn_count = 1
+        label_list = list()
+        
+        for tile_pos in self.path_list:
+            if unit_moves <= 0:
+                unit_moves = 2
+                #draw a turn label here
+                label_pix_pos = mapLocToPixelPos(tile_pos)
+                label_x = label_pix_pos[0] - self.cam_pos[0]
+                label_y = label_pix_pos[1] + self.cam_pos[1]
+                label = pyglet.text.Label(
+                    str(turn_count), font_name='Arial',
+                    font_size=16, x=label_x,
+                    y=label_y,
+                    anchor_x='center', anchor_y='center',
+                    color = (255,255,0,255)
+                )
+                label_list.append(label)
+                turn_count += 1
+        
+            next_tile = self.map.tileAt(tile_pos)
+            tile_cost = next_tile.move_cost
+            unit_moves -= tile_cost
+        
+        return label_list
+                     
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:
         return True
