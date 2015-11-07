@@ -175,7 +175,7 @@ class Map():
 
         for tile in land:
             if (random.uniform(0, 100.0) < gen_chance) and (not tile.feature):
-                tile.feature = Feature.FOREST
+                tile.setFeature(Feature.FOREST)
                 self.spreadForest(tile)
                 self.resetAllVisited()
 
@@ -188,7 +188,7 @@ class Map():
         tile.visited = True
         
         if (random.uniform(0,99.9) < gen_chance):
-            tile.feature = Feature.FOREST
+            tile.setFeature(Feature.FOREST)
             neighbors = self.neighborsOf(tile)
             neighbors = [_tile for _tile in neighbors if _tile.isValidForestLocation()]
             neighbors = filter(self.notVisited, neighbors)
