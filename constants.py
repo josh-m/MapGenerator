@@ -11,3 +11,5 @@ UI_PANEL_WIDTH = 200
 
 SCROLL_MARGIN = 60 #pixels
 SCROLL_SPEED = 10
+
+MAX_DISTANCE = 999999 #substitute for infinity in djikstra's algorithm

@@ -9,10 +9,11 @@ Forest can grow over the starting city (either logically here, or graphically in
 """
 
 import random
+from queue import Queue
 
 from tile import Tile
 from definitions import HexDir, Terrain, Feature, UnitType, UiElement
-from constants import MAP_COL_COUNT, MAP_ROW_COUNT
+from constants import MAP_COL_COUNT, MAP_ROW_COUNT, MAX_DISTANCE
 from util import isEven
 
     
@@ -116,6 +117,8 @@ class Map():
         for col in self.columns:
             for tile in col:
                 tile.visited = False
+                tile.prev_tile = None
+                tile.distance = MAX_DISTANCE
     
     #
     #World building methods
@@ -277,64 +280,57 @@ class Map():
         path_list = list()
         if not end.isEnterableByLandUnit():
             return path_list
-            
-        """
-        neighbors = self.neighborsOf(current_tile)
-        print(str(len(neighbors)))
-        next_path = self.findNextBestLandPath(start, end, neighbors)
-        """
-        path_list = self.constructLandPath(start, end, path_list)
         
+        start.distance = 0
+        
+        land = list()
+        for col in self.columns:
+            land += [tile for tile in col if tile.isEnterableByLandUnit()]
+        
+        while not current_tile.visited:
+            neighbors = self.neighborsOf(current_tile)
+            neighbors = [tile for tile in neighbors if tile.isEnterableByLandUnit()]
+            
+            for tile in neighbors:
+                new_distance = tile.move_cost + current_tile.distance
+                if new_distance < tile.distance:
+                    tile.distance = new_distance
+                    tile.prev_tile = current_tile
+                    
+            current_tile.visited = True
+            #has end tile been reached?
+            if current_tile == end:
+                break
+            
+            land.remove(current_tile)
+            
+            
+            current_tile = None
+            min_distance = MAX_DISTANCE
+            for tile in land:
+                if tile.distance < min_distance:
+                    current_tile = tile
+                    min_distance = tile.distance
+                    
+            #All potential paths have been exhausted
+            if not current_tile:
+                self.resetAllVisited()
+                return []
+        
+        #path has been found, reconstruct
+        curr_path_tile = current_tile
+
+        while curr_path_tile:
+            path_list.insert(0, curr_path_tile.pos)
+            curr_path_tile = curr_path_tile.prev_tile
+    
         self.resetAllVisited()
         return path_list
-    
-    
-    def constructLandPath(self, curr, end, path):
-        curr_idx = curr.pos
-        end_idx = end.pos
+        
+        
+
             
-        neighbors = self.neighborsOf(curr)
-        neighbors = [tile for tile in neighbors if tile.isEnterableByLandUnit()]
-        print(str(len(neighbors)))
-        
-        #next_move = self.nextBestMove(curr, end)
-    
-    #Returns the HexDir that describes the general direction from start to end
-    def directionTo(self, start, end):
-        start_x = start.pos[0]
-        start_y = start.pos[1]
-        end_x = start.pos[0]
-        end_y = start.pos[1]
-        dir = None
-        
-        if start_x == end_x:
-            if start_y < end_y:
-                return HexDir.U
-            else:
-                return HexDir.D
-        
-        if start_x < end_x:
-            if isEven(start_x):
-                if end_y <= start_y:
-                    return HexDir.UR
-                else:
-                    return HexDir.DR
-            else:
-                if end_y < start_y:
-                    return HexDir.UR
-                else:
-                    return HexDir.DR
-        else:
-            if isEven(start_x):
-                if end_y <= start_y:
-                    return HexDir.UL
-                else:
-                    return HexDir.DL
-            else:
-                if end_y < start_y:
-                    return HexDir.UL
-                else:
-                    return HexDir.DL                
+               
             
             
         

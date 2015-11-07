@@ -4,24 +4,28 @@ from util import mapLocToPixelPos
 
 from copy import deepcopy
 
-MAP_DISPLAY_WIDTH = 800
-WINDOW_HEIGHT = 600
+from constants import MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, MAX_DISTANCE
+
 
 class Tile():
     def __init__(self, pos, terr=Terrain.WATER, feature=None, unit=None, ui=None):
         self.pos = deepcopy(pos)
         self.abs_pixel_pos = mapLocToPixelPos(self.pos)
+        
+        self.move_cost = 0
 
-        self.terrain = terr
         self.setTerrain(terr)
-        self.feature = feature
+        self.setFeature(feature)
         self.unit_list = list()
         self.ui_element = ui
 
         
         self.neighbors = [None] * HexDir.LENGTH
+        #for graph operations
         self.visited = False
-
+        self.distance = MAX_DISTANCE
+        self.prev_tile = None
+        
     def setNeighbor(self, dir, tile):
         self.neighbors[dir] = tile
         
@@ -45,9 +49,13 @@ class Tile():
 
     def setTerrain(self, terrain):
         self.terrain = terrain
+        if terrain == Terrain.GRASS:
+            self.move_cost = 1
 
     def setFeature(self, feature):
         self.feature = feature
+        if feature == Feature.FOREST:
+            self.move_cost += 1
         
     def addUnit(self, unit):
         self.unit_list.append(unit)

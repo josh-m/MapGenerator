@@ -26,9 +26,9 @@ class GameWindow(pyglet.window.Window):
         self.turn = 1
         self.active_tile = None
         self.selected_unit_tile = None
+        
         self.to_draw_path = False
-        self.path_start_pos = [0,0]
-        self.path_end_pos = [0,0]
+        self.path_list = list()
         
         self.__initializeGraphics()
         self.__initializeCamera()
@@ -62,12 +62,14 @@ class GameWindow(pyglet.window.Window):
                 clicked_tile = self.determineClosestTile(x,y)
                 if clicked_tile.isEnterableByLandUnit():
                     print("A valid end location has been selected")
-                    path_list = self.map.determineShortestLandPath(self.selected_unit_tile, clicked_tile)
+                    self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, clicked_tile)
+                    print("path list:")
+                    print(str(self.path_list))
             
         elif button == mouse.RIGHT:
             self.selected_unit_tile = None
             self.selection_sprite.x = -9999
-            self.to_draw_path = False
+            del self.path_list[:]
             self.display_panel.updateTileLabels(self.active_tile)
 
     def on_mouse_release(self,x,y,button,modifiers):
@@ -318,13 +320,28 @@ class GameWindow(pyglet.window.Window):
         self._show_fps = True
             
     def __drawPaths(self):
-        if self.to_draw_path:
+        if len(self.path_list) == 0:
+            return
+            
+        path_start = self.path_list[0]
+
+        for path_end in self.path_list[1:]:
+            start_pix_pos = mapLocToPixelPos(path_start)
+            start_pix_pos[0] -= self.cam_pos[0]
+            start_pix_pos[1] += self.cam_pos[1]
+            
+            end_pix_pos = mapLocToPixelPos(path_end)
+            end_pix_pos[0] -= self.cam_pos[0]
+            end_pix_pos[1] += self.cam_pos[1]
+            
             pyglet.graphics.draw(
                     2, pyglet.gl.GL_LINES,
                     ('v2f',
-                        (self.path_start_pos[0] , self.path_start_pos[1],
-                        self.path_end_pos[0], self.path_end_pos[1],
-                        )))    
+                        (start_pix_pos[0] , start_pix_pos[1],
+                        end_pix_pos[0], end_pix_pos[1],
+                        )))
+            
+            path_start = path_end
 
     def addDrawPath(start_tile, end_tile):
         None
