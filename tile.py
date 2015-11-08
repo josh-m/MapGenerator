@@ -5,6 +5,7 @@ from util import mapLocToPixelPos
 from copy import deepcopy
 
 from constants import MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, MAX_DISTANCE
+import unit
 
 
 class Tile():
@@ -57,8 +58,10 @@ class Tile():
         if feature == Feature.FOREST:
             self.move_cost += 1
         
-    def addUnit(self, unit):
-        self.unit_list.append(unit)
+    def addNewUnit(self, unit_type):
+        if unit_type == UnitType.SETTLER:
+            settler = unit.Settler()
+            self.unit_list.append(settler)
     
     def terrainImg(self):
         if self.terrain == Terrain.GRASS:
@@ -77,8 +80,8 @@ class Tile():
             return None
             
     def unitImg(self):
-        if self.unit_list[0] == UnitType.SETTLER: #TODO: multiple units
-            return resources.settler_image
+        if len(self.unit_list) > 0:
+            return self.unit_list[0].image()
         else:
             return None
             

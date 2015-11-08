@@ -42,7 +42,7 @@ class Map():
                     
         self.start_tile = self.tileAt(start_loc)
         self.start_tile.setTerrain(Terrain.GRASS)
-        self.start_tile.addUnit(UnitType.SETTLER)
+        self.start_tile.addNewUnit(UnitType.SETTLER)
 
         self.generateLandmassAround(start_loc)
         self.generateForests()

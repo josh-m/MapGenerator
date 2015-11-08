@@ -90,7 +90,12 @@ class GameWindow(pyglet.window.Window):
                 self.selected_unit_tile = clicked_tile
                 self.selection_sprite.x = clicked_tile.abs_pixel_pos[0] - self.cam_pos[0]
                 self.selection_sprite.y = clicked_tile.abs_pixel_pos[1] + self.cam_pos[1]
+        
+            elif self.selected_unit_tile and len(self.path_list) > 0:
+                #move unit one turn
+                pass
             
+        
     def on_mouse_motion(self,x,y,dx,dy):
         self.scroll_dir = determine_scroll_dir(x,y)
 
@@ -218,7 +223,7 @@ class GameWindow(pyglet.window.Window):
             pos = tile.getAbsolutePixelPos()
             unit_sprite.x = pos[0] - self.cam_pos[0]
             unit_sprite.y = pos[1] + self.cam_pos[1]
-            if tile.unit_list[0] == UnitType.SETTLER: #TODO: multiple units
+            if tile.unit_list[0].unit_type == UnitType.SETTLER: #TODO: multiple units
                 unit_sprite.scale = 0.8
             self.draw_list.append(unit_sprite)
                 
@@ -367,7 +372,11 @@ class GameWindow(pyglet.window.Window):
         turn_count = 1
         label_list = list()
         
-        for tile_pos in self.path_list:
+        for tile_pos in self.path_list[1:]:
+            next_tile = self.map.tileAt(tile_pos)
+            tile_cost = next_tile.move_cost
+            unit_moves -= tile_cost
+            
             if unit_moves <= 0:
                 unit_moves = 2
                 #draw a turn label here
@@ -396,11 +405,7 @@ class GameWindow(pyglet.window.Window):
                 )
                 label_list.append(label)
                 break
-            
-            next_tile = self.map.tileAt(tile_pos)
-            tile_cost = next_tile.move_cost
-            unit_moves -= tile_cost
-        
+                    
         return label_list
                      
 def isInRow(t_sprite, row):
@@ -456,4 +461,4 @@ def pixelPosToMapLoc(pix_pos):
     row_idx = row_idx / y_offset
 
     return [int(col_idx), int(row_idx)]
-                                        
+ 

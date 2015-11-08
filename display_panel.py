@@ -9,6 +9,7 @@ class DisplayPanel():
         self.feature_label = UiLabel('Feature: None', 2)
         self.unit_label = UiLabel('Unit: None', 3)
         self.index_label = UiLabel('Index: None', 4)
+        self.move_cost_label = UiLabel('Move Cost: None', 5)
         
     def draw(self):
         pyglet.graphics.draw(
@@ -24,6 +25,7 @@ class DisplayPanel():
         self.feature_label.draw()
         self.unit_label.draw()
         self.index_label.draw()
+        self.move_cost_label.draw()
     
     def updateTileLabels(self, tile):
         if (not tile):
@@ -31,6 +33,7 @@ class DisplayPanel():
             self.feature_label.text = 'Feature: None'
             self.unit_label.text = 'Unit: None'
             self.index_label.text = 'Index: None'
+            self.move_cost_label.text = 'Move Cost: None'
             return
         
         self.updateTerrainLabel(tile.terrain)
@@ -40,6 +43,7 @@ class DisplayPanel():
         else:
             self.updateUnitLabel(None)
         self.updateIndexLabel(tile.pos)
+        self.updateMoveCostLabel(tile.move_cost)
             
     def updateTerrainLabel(self, terrain):
         if terrain == Terrain.WATER:
@@ -76,6 +80,9 @@ class DisplayPanel():
                                 + ", "
                                 + str(pos[1])
                                 + "]")
+                                
+    def updateMoveCostLabel(self, move_cost):
+        self.move_cost_label.text = ("Move Cost: "+str(move_cost))
         
 class UiLabel(pyglet.text.Label):
     def __init__(self, text, order):
