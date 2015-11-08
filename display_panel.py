@@ -64,9 +64,14 @@ class DisplayPanel():
             self.feature_label.text = 'Feature: Unknown'
             
     def updateUnitLabel(self, unit):
-        if unit == None:
+        if unit:
+            unit_type = unit.unit_type
+        else:
+            unit_type = UnitType.NONE
+            
+        if unit_type == UnitType.NONE:
             self.unit_label.text = 'Unit: None'
-        elif unit == UnitType.SETTLER:
+        elif unit_type == UnitType.SETTLER:
             self.unit_label.text = 'Unit: Settler'
         else:
             self.unit_label.text = 'Unit: Unknown'

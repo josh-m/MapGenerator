@@ -92,8 +92,7 @@ class GameWindow(pyglet.window.Window):
                 self.selection_sprite.y = clicked_tile.abs_pixel_pos[1] + self.cam_pos[1]
         
             elif self.selected_unit_tile and len(self.path_list) > 0:
-                #move unit one turn
-                pass
+                self.moveUnit()
             
         
     def on_mouse_motion(self,x,y,dx,dy):
@@ -272,7 +271,6 @@ class GameWindow(pyglet.window.Window):
     
     def determineClosestTile(self, mouse_x, mouse_y):
         min_distance = 9999999
-        min_pos = [0,0]
         distance = 0.0
         min_sprite = None
 
@@ -280,7 +278,6 @@ class GameWindow(pyglet.window.Window):
             distance = math.sqrt( (sprite.x - mouse_x)**2 + (sprite.y - mouse_y)**2)
             if distance < min_distance:
                 min_distance = distance
-                min_pos = [sprite.x, sprite.y]
                 min_sprite = sprite
                 
         return self.map.tileAt(min_sprite.map_pos)
@@ -367,18 +364,38 @@ class GameWindow(pyglet.window.Window):
             label.draw()
                         
     def createMoveLabels(self):
-        unit_moves = 2 #TODO: placeholder, replace with unit's speed
+        units = self.selected_unit_tile.unit_list
+        if len(units) == 0:
+            return
+        
+        group_moves_left = units[0].moves_left
+        group_move_speed = units[0].move_speed
+        
+        for unit in units[1:]:
+            if unit.moves_left < group_moves_left:
+                group_moves_left = unit.moves_left
+            if unit.move_speed < group_move_speed:
+                group_move_speed = unit.move_speed
+        
         start_pos = self.path_list[0]
-        turn_count = 1
+        
+        if group_moves_left > 0:
+            turn_count = 0
+        else:
+            turn_count = 1
+        
         label_list = list()
         
+        group_moves = group_move_speed
         for tile_pos in self.path_list[1:]:
+            
+            
             next_tile = self.map.tileAt(tile_pos)
             tile_cost = next_tile.move_cost
-            unit_moves -= tile_cost
+            group_moves -= tile_cost
             
-            if unit_moves <= 0:
-                unit_moves = 2
+            if group_moves <= 0:
+                group_moves = group_move_speed
                 #draw a turn label here
                 label_pix_pos = mapLocToPixelPos(tile_pos)
                 label_x = label_pix_pos[0] - self.cam_pos[0]
@@ -407,6 +424,39 @@ class GameWindow(pyglet.window.Window):
                 break
                     
         return label_list
+        
+    def moveUnit(self):
+        units = self.selected_unit_tile.unit_list
+        if len(units) == 0:
+            return
+        moves = units[0].moves_left
+        for unit in units[1:]:
+            if unit.moves_left < moves:
+                moves = unit.moves_left
+        
+        if moves == 0:
+            return
+        
+        self.selected_unit_tile.unit_list = list()
+        
+        start_pos = self.path_list[0]
+        i=1
+        for tile_pos in self.path_list[i:]:
+            next_tile = self.map.tileAt(tile_pos)
+            moves -= next_tile.move_cost
+            for unit in units:
+                unit.moves_left -= next_tile.move_cost
+            i += 1
+            if moves <= 0 or tile_pos == self.path_list[-1]:
+                next_tile.addUnits(units)
+                break
+        
+        self.path_list = self.path_list[i-1:]
+        self.move_labels = self.move_labels[1:]
+        self.selected_unit_tile = next_tile
+        
+        self.selection_sprite.x = next_tile.abs_pixel_pos[0] - self.cam_pos[0]
+        self.selection_sprite.y = next_tile.abs_pixel_pos[1] + self.cam_pos[1]
                      
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:

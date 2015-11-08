@@ -14,8 +14,10 @@ class Tile():
         self.abs_pixel_pos = mapLocToPixelPos(self.pos)
         
         self.move_cost = 0
-
+        
+        
         self.setTerrain(terr)
+        self.feature = None
         self.setFeature(feature)
         self.unit_list = list()
         self.ui_element = ui
@@ -54,6 +56,9 @@ class Tile():
             self.move_cost = 1
 
     def setFeature(self, feature):
+        if self.feature == Feature.FOREST:
+            self.move_cost -= 1
+        
         self.feature = feature
         if feature == Feature.FOREST:
             self.move_cost += 1
@@ -62,6 +67,9 @@ class Tile():
         if unit_type == UnitType.SETTLER:
             settler = unit.Settler()
             self.unit_list.append(settler)
+            
+    def addUnits(self, units):
+        self.unit_list += units
     
     def terrainImg(self):
         if self.terrain == Terrain.GRASS:

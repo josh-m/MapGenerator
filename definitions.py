@@ -13,6 +13,7 @@ class UiElement(Enum):
     BORDER = 1
     
 class UnitType(Enum):
+    NONE = 0
     SETTLER = 1
     CIVILIAN = 2
 
