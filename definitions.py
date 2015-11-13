@@ -21,6 +21,11 @@ class Behavior(Enum):
     IDLE = 0
     WANDER = 1
     GATHER = 2
+    
+class SpriteType(Enum):
+    TERRAIN = 1
+    FEATURE = 2
+    UNIT = 3
 
 class HexDir(IntEnum):
     FIRST=0

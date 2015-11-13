@@ -22,6 +22,9 @@ class Tile():
         self.unit_list = list()
         self.ui_element = ui
 
+        self.terrain_sprite = None
+        self.feature_sprite = None
+        self.unit_sprite = None
         
         self.neighbors = [None] * HexDir.LENGTH
         #for graph operations

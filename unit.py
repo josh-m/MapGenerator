@@ -7,6 +7,9 @@ class Unit():
         self.moves_left = self.move_speed
         self.health = 1
         
+    def restoreMoves(self):
+        self.moves_left = self.move_speed
+        
 class Settler(Unit):
     def __init__(self):
         super(Settler, self).__init__()

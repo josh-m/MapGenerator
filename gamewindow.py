@@ -5,7 +5,7 @@ from pyglet.window import key, mouse
 import math
 from copy import deepcopy
 
-from definitions import DiagDir, Terrain, Feature, UnitType, HexDir
+from definitions import DiagDir, Terrain, Feature, UnitType, HexDir, SpriteType
 from constants import  (MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, UI_PANEL_WIDTH,
                         DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED)
 from util import isEven, mapLocToPixelPos
@@ -27,6 +27,8 @@ class GameWindow(pyglet.window.Window):
         self.active_tile = None
         self.selected_unit_tile = None
         
+        self.unit_sprites = []
+        
         self.to_draw_path = False
         self.path_list = list() #positions of unit move path
         self.move_labels = list()
@@ -35,6 +37,7 @@ class GameWindow(pyglet.window.Window):
         self.__initializeCamera()
         self.__initializeUI()
         self.display_panel = DisplayPanel()
+       
      
         pyglet.clock.schedule_interval(self.update, 1/45.0)
 
@@ -45,6 +48,8 @@ class GameWindow(pyglet.window.Window):
             self.fps_display.draw()
         self.__drawPaths()
         self.display_panel.draw()
+        
+        
 
     def update(self, dt):
         if self.scroll_dir != DiagDir.NONE:
@@ -56,6 +61,17 @@ class GameWindow(pyglet.window.Window):
         elif symbol == key.SPACE:
             self.turn += 1
             self.display_panel.updateTurnLabel(self.turn)
+            
+            all_units = self.map.allUnits()
+            for unit in all_units:
+                unit.restoreMoves()
+                
+            if len(self.path_list) > 0:
+                self.createMoveLabels()
+                for label in self.move_labels:
+                    turn_num = int(label.text)
+                    turn_num -= 1
+                    label.text = str(turn_num)
 
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
@@ -193,17 +209,18 @@ class GameWindow(pyglet.window.Window):
     def addTileSprites(self, tile):
         if tile.terrain != None:
             terr_sprite = TileSprite(   map_pos = tile.getMapPos(),
+                                        sprite_type = SpriteType.TERRAIN,
                                         img = tile.terrainImg(),
                                         batch = self.batch,
                                         group = self.terrain_group)
             pos = tile.getAbsolutePixelPos()
             terr_sprite.x = (pos[0] - self.cam_pos[0])
             terr_sprite.y = (pos[1] + self.cam_pos[1])
-
             self.draw_list.append(terr_sprite)
 
         if tile.feature != None:
-            ftr_sprite = TileSprite( map_pos = tile.getMapPos(),
+            ftr_sprite = TileSprite(map_pos = tile.getMapPos(),
+                                    sprite_type = SpriteType.FEATURE,
                                     img = tile.featureImg(),
                                     batch = self.batch,
                                     group = self.feature_group)
@@ -215,34 +232,44 @@ class GameWindow(pyglet.window.Window):
             self.draw_list.append(ftr_sprite)
             
         if len(tile.unit_list) > 0:
-            unit_sprite = TileSprite( map_pos = tile.getMapPos(),
-                                    img = tile.unitImg(),
-                                    batch = self.batch,
-                                    group = self.unit_group)
+            unit_sprite = TileSprite(   map_pos = tile.getMapPos(),
+                                        sprite_type = SpriteType.UNIT,
+                                        img = tile.unitImg(),
+                                        batch = self.batch,
+                                        group = self.unit_group)
             pos = tile.getAbsolutePixelPos()
             unit_sprite.x = pos[0] - self.cam_pos[0]
             unit_sprite.y = pos[1] + self.cam_pos[1]
             if tile.unit_list[0].unit_type == UnitType.SETTLER: #TODO: multiple units
                 unit_sprite.scale = 0.8
+
             self.draw_list.append(unit_sprite)
-                
+            self.unit_sprites.append(unit_sprite)
+
+            
+            
     def removeDrawRow(self, row):
         #Remove sprites from right
         to_remove = list(filter(
-                lambda x: isInRow(x, row), self.draw_list))
-
-        for sprite in to_remove:
-            self.draw_list.remove(sprite)
-            sprite.delete() #immediately removes sprite from video memory
+                lambda x: isInRow(x, row), self.draw_list))      
+        self.__removeSprites(to_remove)
 
     def removeDrawColumn(self, col):
         to_remove = list(filter(
                 lambda x: isInColumn(x, col), self.draw_list))
-
-        for sprite in to_remove:
-            self.draw_list.remove(sprite)
-            sprite.delete() #immediately removes sprite from video memory
+        self.__removeSprites(to_remove)
         
+    def __removeSprites(self, sprites):
+        for _sprite in sprites:
+            if _sprite is not None:
+                _sprite.delete() #immediately removes sprite from video memory
+            if _sprite in self.draw_list:
+                self.draw_list.remove(_sprite)
+            if _sprite.sprite_type == SpriteType.UNIT:
+                if _sprite in self.unit_sprites:
+                    self.unit_sprites.remove(_sprite)
+
+    
     def centerCameraOnSprite(self, sprite):
         pos = [0,0]
         pos = mapLocToPixelPos(sprite.map_pos)
@@ -312,6 +339,8 @@ class GameWindow(pyglet.window.Window):
         )
         self.selection_sprite.x = -9999
         
+        pyglet.gl.glLineWidth(2)
+        
     def __initializeCamera(self):
         self.cam_pos = [0,0]
         self.centerCameraOnTile(self.map.start_tile)
@@ -341,7 +370,7 @@ class GameWindow(pyglet.window.Window):
             return
             
         path_start = self.path_list[0]
-
+        
         for path_end in self.path_list[1:]:
             start_pix_pos = mapLocToPixelPos(path_start)
             start_pix_pos[0] -= self.cam_pos[0]
@@ -434,10 +463,9 @@ class GameWindow(pyglet.window.Window):
             if unit.moves_left < moves:
                 moves = unit.moves_left
         
-        if moves == 0:
+        if moves <= 0:
             return
         
-        self.selected_unit_tile.unit_list = list()
         
         start_pos = self.path_list[0]
         i=1
@@ -453,10 +481,25 @@ class GameWindow(pyglet.window.Window):
         
         self.path_list = self.path_list[i-1:]
         self.move_labels = self.move_labels[1:]
-        self.selected_unit_tile = next_tile
         
         self.selection_sprite.x = next_tile.abs_pixel_pos[0] - self.cam_pos[0]
         self.selection_sprite.y = next_tile.abs_pixel_pos[1] + self.cam_pos[1]
+        
+        unit_sprite = None
+        for spr in self.draw_list:
+            if (spr.sprite_type == SpriteType.UNIT
+            and spr.map_pos[0] == self.selected_unit_tile.pos[0]
+            and spr.map_pos[1] == self.selected_unit_tile.pos[1]):
+                spr.moveToMapIdx(next_tile.pos)
+                spr.x = next_tile.abs_pixel_pos[0] - self.cam_pos[0]
+                spr.y = next_tile.abs_pixel_pos[1] + self.cam_pos[1]
+                break
+        
+        
+        self.selected_unit_tile.unit_list = list()
+        self.selected_unit_tile = next_tile
+        
+
                      
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:

@@ -3,9 +3,6 @@ Map
 
 Map generates and stores the list of tiles and their indexes.
 Also keeps track of the currently selected tile.
-
-OUTSTANDING BUGS:
-Forest can grow over the starting city (either logically here, or graphically in GameWindow)
 """
 
 import random
@@ -327,7 +324,13 @@ class Map():
         self.resetAllVisited()
         return path_list
         
-        
+    def allUnits(self):
+        units = list()
+        for col in self.columns:
+            for tile in col:
+                units += tile.unit_list
+    
+        return units
 
             
                
