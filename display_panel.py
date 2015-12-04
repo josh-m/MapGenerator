@@ -7,9 +7,9 @@ class DisplayPanel():
         self.turn_label = UiLabel('Turn: 1', 0)
         self.terrain_label = UiLabel('Terrain: None', 1)
         self.feature_label = UiLabel('Feature: None', 2)
-        self.unit_label = UiLabel('Unit: None', 3)
+        self.move_cost_label = UiLabel('Move Cost: None', 3)
         self.index_label = UiLabel('Index: None', 4)
-        self.move_cost_label = UiLabel('Move Cost: None', 5)
+        self.unit_label = UiLabel('Unit: None', 5)
         
     def draw(self):
         pyglet.graphics.draw(
@@ -23,9 +23,9 @@ class DisplayPanel():
         self.turn_label.draw()
         self.terrain_label.draw()
         self.feature_label.draw()
-        self.unit_label.draw()
         self.index_label.draw()
         self.move_cost_label.draw()
+        self.unit_label.draw()
     
     def updateTileLabels(self, tile):
         if (not tile):

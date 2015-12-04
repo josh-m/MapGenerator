@@ -68,9 +68,12 @@ class Tile():
         
     def addNewUnit(self, unit_type):
         if unit_type == UnitType.SETTLER:
-            settler = unit.Settler()
+            settler = unit.Settler(self.pos)
             self.unit_list.append(settler)
-            
+    
+    def addUnit(self, unit):
+        self.unit_list.append(unit)
+    
     def addUnits(self, units):
         self.unit_list += units
     

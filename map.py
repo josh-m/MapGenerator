@@ -20,7 +20,6 @@ class Map():
     By default creates a map with the default size.
     Supply two integers to constructor to generate a different size.
     """
-    #TODO: Separate functionality. Less code in __init__ -- helper functions
     def __init__(self, n_cols=MAP_COL_COUNT, n_rows=MAP_ROW_COUNT):
         self.size = (n_cols, n_rows)
         self.columns = list()
@@ -273,11 +272,11 @@ class Map():
     #Returns a list of HexDir that constitutes a best
     #land path from start to end.
     def determineShortestLandPath(self, start, end):
-        current_tile = start
         path_list = list()
         if not end.isEnterableByLandUnit():
             return path_list
         
+        current_tile = start
         start.distance = 0
         
         land = list()

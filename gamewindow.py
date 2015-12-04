@@ -38,7 +38,6 @@ class GameWindow(pyglet.window.Window):
         self.__initializeUI()
         self.display_panel = DisplayPanel()
        
-     
         pyglet.clock.schedule_interval(self.update, 1/45.0)
 
     def on_draw(self):
@@ -49,8 +48,6 @@ class GameWindow(pyglet.window.Window):
         self.__drawPaths()
         self.display_panel.draw()
         
-        
-
     def update(self, dt):
         if self.scroll_dir != DiagDir.NONE:
             self.scroll(self.scroll_dir)
@@ -65,21 +62,22 @@ class GameWindow(pyglet.window.Window):
             all_units = self.map.allUnits()
             for unit in all_units:
                 unit.restoreMoves()
-                
-            if len(self.path_list) > 0:
-                self.createMoveLabels()
-                for label in self.move_labels:
-                    turn_num = int(label.text)
-                    turn_num -= 1
-                    label.text = str(turn_num)
-
+                self.moveUnit(unit)
+            
+            self.selected_unit_tile = None
+            self.path_list = list()
+            self.move_labels = list()
+            self.selection_sprite.x = 99999
+            self.selection_sprite.y = 99999
+            
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
             if self.selected_unit_tile:
-                if self.active_tile.isEnterableByLandUnit():
-                    self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, self.active_tile)
-                    if len(self.path_list) >0:
-                        self.move_labels = self.createMoveLabels()
+                self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, self.active_tile)
+                if len(self.path_list) >0:
+                    for unit in self.selected_unit_tile.unit_list:
+                        unit.setMovePath(self.path_list)
+                    self.move_labels = self.createMoveLabels()
                     
         elif button == mouse.RIGHT:
             self.selected_unit_tile = None
@@ -97,19 +95,44 @@ class GameWindow(pyglet.window.Window):
                 if len(self.path_list) == 0 or self.active_tile.pos != self.path_list[-1]:
                     self.path_list = self.map.determineShortestLandPath(self.selected_unit_tile, self.active_tile)
                     if len(self.path_list) > 0:
+                        for unit in self.selected_unit_tile.unit_list:
+                            unit.setMovePath(self.path_list)
                         self.move_labels = self.createMoveLabels()
     
     def on_mouse_release(self,x,y,button,modifiers):
         if button == mouse.LEFT:
             clicked_tile = self.determineClosestTile(x,y)
             if len(clicked_tile.unit_list) > 0:
+                #select the unit
                 self.selected_unit_tile = clicked_tile
                 self.selection_sprite.x = clicked_tile.abs_pixel_pos[0] - self.cam_pos[0]
                 self.selection_sprite.y = clicked_tile.abs_pixel_pos[1] + self.cam_pos[1]
+                
+                unit = self.selected_unit_tile.unit_list[0]
+                if len(unit.move_list) > 0:
+                    #draw the existing move list
+                    self.path_list = unit.move_list
+                    self.move_labels = self.createMoveLabels()
+                    
         
-            elif self.selected_unit_tile and len(self.path_list) > 0:
-                self.moveUnit()
-            
+            elif self.selected_unit_tile and len(self.path_list) > 1:
+            #Move selected unit immediately
+                dst_tile = self.moveUnit(self.selected_unit_tile.unit_list[0])
+                
+                if dst_tile.getMapPos() != self.selected_unit_tile.getMapPos():
+                #The unit actually moved
+                    self.selected_unit_tile = dst_tile
+                    self.selection_sprite.x = dst_tile.abs_pixel_pos[0] - self.cam_pos[0]
+                    self.selection_sprite.y = dst_tile.abs_pixel_pos[1] + self.cam_pos[1]
+                    
+                    i=0
+                    for idx in self.path_list:
+                        if idx == dst_tile.getMapPos():
+                            break
+                        i+=1
+                    
+                    self.path_list = self.path_list[i:]
+                    self.move_labels = self.move_labels[1:]
         
     def on_mouse_motion(self,x,y,dx,dy):
         self.scroll_dir = determine_scroll_dir(x,y)
@@ -388,9 +411,10 @@ class GameWindow(pyglet.window.Window):
                         )))
             
             path_start = path_end
-            
-        for label in self.move_labels:
-            label.draw()
+        
+        if self.move_labels:
+            for label in self.move_labels:
+                label.draw()
                         
     def createMoveLabels(self):
         units = self.selected_unit_tile.unit_list
@@ -406,7 +430,8 @@ class GameWindow(pyglet.window.Window):
             if unit.move_speed < group_move_speed:
                 group_move_speed = unit.move_speed
         
-        start_pos = self.path_list[0]
+        start_pos = units[0].map_idx
+        group_path = units[0].move_list
         
         if group_moves_left > 0:
             turn_count = 0
@@ -416,7 +441,7 @@ class GameWindow(pyglet.window.Window):
         label_list = list()
         
         group_moves = group_move_speed
-        for tile_pos in self.path_list[1:]:
+        for tile_pos in group_path[1:]:
             
             
             next_tile = self.map.tileAt(tile_pos)
@@ -438,7 +463,7 @@ class GameWindow(pyglet.window.Window):
                 )
                 label_list.append(label)
                 turn_count += 1
-            elif tile_pos == self.path_list[-1]:
+            elif tile_pos == group_path[-1]:
                 label_pix_pos = mapLocToPixelPos(tile_pos)
                 label_x = label_pix_pos[0] - self.cam_pos[0]
                 label_y = label_pix_pos[1] + self.cam_pos[1]
@@ -454,53 +479,53 @@ class GameWindow(pyglet.window.Window):
                     
         return label_list
         
-    def moveUnit(self):
-        units = self.selected_unit_tile.unit_list
-        if len(units) == 0:
-            return
-        moves = units[0].moves_left
-        for unit in units[1:]:
-            if unit.moves_left < moves:
-                moves = unit.moves_left
-        
+    def moveUnit(self, unit):
+        if len(unit.move_list) < 1:
+            return self.map.tileAt(unit.map_idx)
+        moves = unit.moves_left
         if moves <= 0:
-            return
+            return self.map.tileAt(unit.map_idx)
         
-        
-        start_pos = self.path_list[0]
+        start_pos = unit.map_idx
+        print("moveUnit: start_pos ["+str(start_pos[0])+","+str(start_pos[1])+']')
+        print("moveUnit: moves:" + str(unit.moves_left))
+        for pos in unit.move_list:
+            print('['+str(pos[0])+','+str(pos[1])+']')
         i=1
-        for tile_pos in self.path_list[i:]:
-            next_tile = self.map.tileAt(tile_pos)
+        next_tile = None
+        for tile_idx in unit.move_list[1:]:
+            next_tile = self.map.tileAt(tile_idx)
             moves -= next_tile.move_cost
-            for unit in units:
-                unit.moves_left -= next_tile.move_cost
+            unit.moves_left -= next_tile.move_cost
             i += 1
-            if moves <= 0 or tile_pos == self.path_list[-1]:
-                next_tile.addUnits(units)
+            if moves <= 0 or tile_idx == unit.move_list[-1]:
+                next_tile.addUnit(unit)
+                unit.setMapIdx(tile_idx)
                 break
         
-        self.path_list = self.path_list[i-1:]
-        self.move_labels = self.move_labels[1:]
+        if not next_tile:
+        #The unit did not move
+            return self.map.tileAt(unit.map_idx)
         
-        self.selection_sprite.x = next_tile.abs_pixel_pos[0] - self.cam_pos[0]
-        self.selection_sprite.y = next_tile.abs_pixel_pos[1] + self.cam_pos[1]
+        
+        remaining_moves = unit.move_list[i-1:]
+        unit.setMovePath(remaining_moves)
         
         unit_sprite = None
         for spr in self.draw_list:
             if (spr.sprite_type == SpriteType.UNIT
-            and spr.map_pos[0] == self.selected_unit_tile.pos[0]
-            and spr.map_pos[1] == self.selected_unit_tile.pos[1]):
+            and spr.map_pos[0] == start_pos[0]
+            and spr.map_pos[1] == start_pos[1]):
                 spr.moveToMapIdx(next_tile.pos)
                 spr.x = next_tile.abs_pixel_pos[0] - self.cam_pos[0]
                 spr.y = next_tile.abs_pixel_pos[1] + self.cam_pos[1]
                 break
-        
-        
-        self.selected_unit_tile.unit_list = list()
-        self.selected_unit_tile = next_tile
-        
-
                      
+        start_tile = self.map.tileAt(start_pos)
+        start_tile.unit_list = list()
+
+        return self.map.tileAt(unit.map_idx)
+         
 def isInRow(t_sprite, row):
     if t_sprite.map_pos[1] == row:
         return True
