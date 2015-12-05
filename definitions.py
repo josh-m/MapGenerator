@@ -4,6 +4,7 @@ class Terrain(Enum):
     BLANK = 0
     WATER = 1
     GRASS = 2
+    MOUNTAIN = 3
 
 class Feature(Enum):
     FOREST = 1

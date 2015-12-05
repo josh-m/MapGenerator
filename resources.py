@@ -65,11 +65,21 @@ def random_mountain():
 town_image = pyglet.resource.image('human-house.png')
 center_anchor(town_image)
 
+"""
+UNITS
+"""
+
 #SETTLER#
 settler_image = pyglet.resource.image('caravan.png')
 center_anchor(settler_image)
 
-#UI#
+#WOLF#
+wolf_image = pyglet.resource.image('wolf.png')
+center_anchor(wolf_image)
+
+"""
+UI
+"""
 selection_image = pyglet.resource.image('selection-overlay.png')
 center_anchor(selection_image)
 

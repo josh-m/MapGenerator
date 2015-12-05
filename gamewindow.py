@@ -231,11 +231,16 @@ class GameWindow(pyglet.window.Window):
     
     def addTileSprites(self, tile):
         if tile.terrain != None:
+            if tile.terrain == Terrain.MOUNTAIN:
+                batch_group = self.big_terrain_group
+            else:
+                batch_group = self.terrain_group
+        
             terr_sprite = TileSprite(   map_pos = tile.getMapPos(),
                                         sprite_type = SpriteType.TERRAIN,
                                         img = tile.terrainImg(),
                                         batch = self.batch,
-                                        group = self.terrain_group)
+                                        group = batch_group)
             pos = tile.getAbsolutePixelPos()
             terr_sprite.x = (pos[0] - self.cam_pos[0])
             terr_sprite.y = (pos[1] + self.cam_pos[1])
@@ -350,8 +355,9 @@ class GameWindow(pyglet.window.Window):
         self.batch = pyglet.graphics.Batch()
         self.terrain_group = pyglet.graphics.OrderedGroup(0)
         self.feature_group = pyglet.graphics.OrderedGroup(1)
-        self.unit_group = pyglet.graphics.OrderedGroup(2)
-        self.ui_group = pyglet.graphics.OrderedGroup(3)
+        self.big_terrain_group = pyglet.graphics.OrderedGroup(2)
+        self.unit_group = pyglet.graphics.OrderedGroup(3)
+        self.ui_group = pyglet.graphics.OrderedGroup(4)
 
         self.draw_list = list() #TODO: remove once Tiles are responsible for their own sprites
         
@@ -512,6 +518,7 @@ class GameWindow(pyglet.window.Window):
         unit.setMovePath(remaining_moves)
         
         unit_sprite = None
+        sprite_found = False
         for spr in self.draw_list:
             if (spr.sprite_type == SpriteType.UNIT
             and spr.map_pos[0] == start_pos[0]
@@ -519,7 +526,28 @@ class GameWindow(pyglet.window.Window):
                 spr.moveToMapIdx(next_tile.pos)
                 spr.x = next_tile.abs_pixel_pos[0] - self.cam_pos[0]
                 spr.y = next_tile.abs_pixel_pos[1] + self.cam_pos[1]
+                sprite_found = True
                 break
+        
+        """
+        This is re-adding any unit sprite that had been trimmed from being offscreen
+        as soon as it moves.
+        TODO: Check if the unit moved onto a tile within current camera view
+        """
+        if not sprite_found:
+            unit_sprite = TileSprite(   map_pos = next_tile.getMapPos(),
+                                        sprite_type = SpriteType.UNIT,
+                                        img = next_tile.unitImg(),
+                                        batch = self.batch,
+                                        group = self.unit_group)
+            pos = next_tile.getAbsolutePixelPos()
+            unit_sprite.x = pos[0] - self.cam_pos[0]
+            unit_sprite.y = pos[1] + self.cam_pos[1]
+            if next_tile.unit_list[0].unit_type == UnitType.SETTLER: #TODO: multiple units
+                unit_sprite.scale = 0.8
+
+            self.draw_list.append(unit_sprite)
+            self.unit_sprites.append(unit_sprite)
                      
         start_tile = self.map.tileAt(start_pos)
         start_tile.unit_list = list()

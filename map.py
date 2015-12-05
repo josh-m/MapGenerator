@@ -42,6 +42,7 @@ class Map():
 
         self.generateLandmassAround(start_loc)
         self.generateForests()
+        self.generateMountains()
 
         self.selected_tile = None
 
@@ -154,9 +155,9 @@ class Map():
             #where gen_list is growing too fast, and the temp_list is getting nearly
             #every tile on the map (even duplicates due to the world wrapping in neighborAt())
             #FIX OPTIONS: check for duplicates (use visited attribute), remove world wrapping,
-            #or just don't fuck w/ the value (although loop is still possible,
+            #or just don't change the value (although loop is still possible,
             # however unlikely, with regular values)
-            gen_chance -= 8.0
+            gen_chance -= 5.0
 
             
     """
@@ -167,7 +168,7 @@ class Map():
         gen_chance = 7.0
         land = list()
         for col in self.columns:
-            land += [tile for tile in col if tile.isValidForestLocation()]
+            land += [tile for tile in col if tile.isFlatland()]
 
         for tile in land:
             if (random.uniform(0, 100.0) < gen_chance) and (not tile.feature):
@@ -186,12 +187,26 @@ class Map():
         if (random.uniform(0,99.9) < gen_chance):
             tile.setFeature(Feature.FOREST)
             neighbors = self.neighborsOf(tile)
-            neighbors = [_tile for _tile in neighbors if _tile.isValidForestLocation()]
+            neighbors = [_tile for _tile in neighbors if _tile.isFlatland()]
             neighbors = filter(self.notVisited, neighbors)
         
             for neighbor_tile in neighbors:
                 self.spreadForest(neighbor_tile, gen_chance - 25.0)
 
+    """
+    generateMountains:
+    Adds mountains to the map.
+    TODO: Create mountain ranges instead of simple random placement
+    """
+    def generateMountains(self):
+        land = list()
+        for col in self.columns:
+            land += [tile for tile in col if tile.isFlatland() and tile.feature == None]
+            
+        for tile in land:
+            if random.uniform(0,100.0) < 5:
+                tile.setTerrain(Terrain.MOUNTAIN)
+            
     """
     neighborsOf:
     Returns a list of all tiles immediately neighboring the given tile           

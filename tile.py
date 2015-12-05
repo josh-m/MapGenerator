@@ -82,6 +82,8 @@ class Tile():
             return resources.random_grass()
         elif self.terrain == Terrain.WATER:
             return resources.ocean_anim
+        elif self.terrain == Terrain.MOUNTAIN:
+            return resources.random_mountain()
         else:
             return None
     
@@ -120,7 +122,7 @@ class Tile():
     def isValidCityLocation(self):
         return self.terrain == Terrain.GRASS
 
-    def isValidForestLocation(self):
+    def isFlatland(self):
         return self.terrain == Terrain.GRASS
     
     def isEnterableByLandUnit(self):

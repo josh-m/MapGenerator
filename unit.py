@@ -29,3 +29,13 @@ class Settler(Unit):
         
     def image(self):
         return resources.settler_image
+        
+class Wolf(Unit):
+    def __init__(self, *args, **kwargs):
+        super(Settler, self).__init__(*args, **kwargs)
+        self.unit_type = UnitType.WOLF
+        self.move_speed = 1
+        self.moves_left = self.move_speed
+        
+    def image(self):
+        return resources.wolf_image
