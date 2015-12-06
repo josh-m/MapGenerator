@@ -37,13 +37,14 @@ class Map():
                         int(random.triangular(0,n_rows))]
                     
         self.start_tile = self.tileAt(start_loc)
-        self.start_tile.setTerrain(Terrain.GRASS)
-        self.start_tile.addNewUnit(UnitType.SETTLER)
 
         self.generateLandmassAround(start_loc)
         self.generateForests()
         self.generateMountains()
 
+        self.start_tile.setTerrain(Terrain.GRASS)
+        self.start_tile.addNewUnit(UnitType.SETTLER)
+        
         self.selected_tile = None
 
     """
@@ -345,18 +346,3 @@ class Map():
                 units += tile.unit_list
     
         return units
-
-            
-               
-            
-            
-        
-        
-            
-            
-            
-            
-            
-            
-            
-            
