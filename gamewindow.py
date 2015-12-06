@@ -53,7 +53,8 @@ class GameWindow(pyglet.window.Window):
             all_units = self.map.allUnits()
             for unit in all_units:
                 unit.restoreMoves()
-                self.map_display.moveUnit(unit)
+                tiles = self.map.moveUnit(unit)
+                self.map_display.moveUnit(unit, tiles[0], tiles[1])
             
             self.map_display.drawNewTurn()
 

@@ -154,37 +154,12 @@ class MapDisplay():
                     
         return label_list
         
-    def moveUnit(self, unit):
-        if len(unit.move_list) < 1:
-            return self.map.tileAt(unit.map_idx)
-        moves = unit.moves_left
-        if moves <= 0:
-            return self.map.tileAt(unit.map_idx)
-        
-        start_pos = unit.map_idx
-        print("moveUnit: start_pos ["+str(start_pos[0])+","+str(start_pos[1])+']')
-        print("moveUnit: moves:" + str(unit.moves_left))
-        for pos in unit.move_list:
-            print('['+str(pos[0])+','+str(pos[1])+']')
-        i=1
-        next_tile = None
-        for tile_idx in unit.move_list[1:]:
-            next_tile = self.map.tileAt(tile_idx)
-            moves -= next_tile.move_cost
-            unit.moves_left -= next_tile.move_cost
-            i += 1
-            if moves <= 0 or tile_idx == unit.move_list[-1]:
-                next_tile.addUnit(unit)
-                unit.setMapIdx(tile_idx)
-                break
-        
-        if not next_tile:
-        #The unit did not move
-            return self.map.tileAt(unit.map_idx)
-        
-        
-        remaining_moves = unit.move_list[i-1:]
-        unit.setMovePath(remaining_moves)
+    def moveUnit(self, unit, start_tile, end_tile):
+        start_pos = start_tile.getMapPos()
+        next_tile = end_tile
+    
+        if start_tile.getMapPos() == end_tile.getMapPos():
+            return
         
         unit_sprite = None
         sprite_found = False
@@ -222,7 +197,7 @@ class MapDisplay():
         start_tile = self.map.tileAt(start_pos)
         start_tile.unit_list = list()
 
-        return self.map.tileAt(unit.map_idx)
+
         
     def scroll(self):
         if self.scroll_dir == DiagDir.NONE:
@@ -491,8 +466,11 @@ class MapDisplay():
     
         elif self.selected_unit_tile and len(self.path_list) > 1:
         #Move selected unit immediately
-            dst_tile = self.moveUnit(self.selected_unit_tile.unit_list[0])
+            tiles = self.map.moveUnit(self.selected_unit_tile.unit_list[0])
+            self.moveUnit(self.selected_unit_tile.unit_list[0], tiles[0], tiles[1])
             
+            
+            dst_tile = tiles[1]
             if dst_tile.getMapPos() != self.selected_unit_tile.getMapPos():
             #The unit actually moved
                 self.selected_unit_tile = dst_tile

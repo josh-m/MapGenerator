@@ -338,7 +338,36 @@ class Map():
     
         self.resetAllVisited()
         return path_list
+    
+    def moveUnit(self, unit):
+        if len(unit.move_list) < 1:
+            return [self.tileAt(unit.map_idx),self.tileAt(unit.map_idx)]
+        moves = unit.moves_left
+        if moves <= 0:
+            return [self.tileAt(unit.map_idx),self.tileAt(unit.map_idx)]
         
+        start_pos = unit.map_idx
+        i=1
+        next_tile = None
+        for tile_idx in unit.move_list[1:]:
+            next_tile = self.tileAt(tile_idx)
+            moves -= next_tile.move_cost
+            unit.moves_left -= next_tile.move_cost
+            i += 1
+            if moves <= 0 or tile_idx == unit.move_list[-1]:
+                next_tile.addUnit(unit)
+                unit.setMapIdx(tile_idx)
+                break
+        
+        remaining_moves = unit.move_list[i-1:]
+        unit.setMovePath(remaining_moves)
+                
+        if not next_tile:
+        #The unit did not move
+            return [self.tileAt(unit.map_idx), self.tileAt(unit.map_idx)]
+
+        return [self.tileAt(start_pos), self.tileAt(unit.map_idx)]
+    
     def allUnits(self):
         units = list()
         for col in self.columns:
