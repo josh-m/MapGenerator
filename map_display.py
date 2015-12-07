@@ -214,17 +214,17 @@ class MapDisplay():
         dy=0
 
         if dir==DiagDir.LEFT or dir==DiagDir.UL or dir==DiagDir.DL:
-            if not WRAP_X and not self.cam_pos[0] < 0:
+            if WRAP_X or not WRAP_X and not self.cam_pos[0] < 0:
                 dx = -SCROLL_SPEED
         elif dir==DiagDir.RIGHT or dir==DiagDir.UR or dir==DiagDir.DR:
-            if not WRAP_X and not self.cam_pos[0] > MAX_CAM_POS_X:
+            if WRAP_X or not WRAP_X and not self.cam_pos[0] > MAX_CAM_POS_X:
                 dx = SCROLL_SPEED
 
         if dir==DiagDir.UP or dir==DiagDir.UL or dir==DiagDir.UR:
-            if not WRAP_X and not self.cam_pos[1] < 0:
+            if WRAP_Y or not WRAP_Y and not self.cam_pos[1] < 0:
                 dy = SCROLL_SPEED
         elif dir==DiagDir.DOWN or dir==DiagDir.DR or dir==DiagDir.DL:
-            if not WRAP_Y and not self.cam_pos[1] > MAX_CAM_POS_Y:
+            if WRAP_Y or not WRAP_Y and not self.cam_pos[1] > MAX_CAM_POS_Y:
                 dy = -SCROLL_SPEED
 
         self.cam_pos[0] += dx
