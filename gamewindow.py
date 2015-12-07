@@ -6,8 +6,8 @@ from pyglet.window import key, mouse
 from copy import deepcopy
 
 from definitions import DiagDir, Terrain, Feature, UnitType, HexDir, SpriteType
-from constants import  (MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, UI_PANEL_WIDTH,
-                        DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED)
+from constants import  (WINDOW_HEIGHT, MAP_DISPLAY_WIDTH, MAP_DISPLAY_HEIGHT, UI_PANEL_WIDTH,
+                        DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED, WRAP_X, WRAP_Y)
 from display_panel import DisplayPanel
 from map_display import MapDisplay
 
@@ -17,12 +17,10 @@ class GameWindow(pyglet.window.Window):
 
     def __init__(self, map, *args, **kwargs):
         super(GameWindow, self).__init__(   MAP_DISPLAY_WIDTH+UI_PANEL_WIDTH,
-                                            WINDOW_HEIGHT, *args, **kwargs)
+                                            MAP_DISPLAY_HEIGHT, *args, **kwargs)
         self.map = map
         self.turn = 1
 
-        #self.__initializeGraphics()
-        #self.__initializeCamera()
         self.__initializeUI()
         
         self.map_display = MapDisplay(map)

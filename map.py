@@ -10,7 +10,7 @@ from queue import Queue
 
 from tile import Tile
 from definitions import HexDir, Terrain, Feature, UnitType, UiElement
-from constants import MAP_COL_COUNT, MAP_ROW_COUNT, MAX_DISTANCE
+from constants import MAP_COL_COUNT, MAP_ROW_COUNT, MAX_DISTANCE, WRAP_X, WRAP_Y
 from util import isEven
 
     
@@ -69,9 +69,19 @@ class Map():
     def tileAt(self, pos):
         x = pos[0]
         y = pos[1]
-
-        tile = self.columns[x % (self.size[0])][y % (self.size[1])]
-
+        
+        if WRAP_X:
+            x = x % (self.size[0])
+        if WRAP_Y:
+            y = y % (self.size[1])
+        
+        #is requested tile out of bounds?
+        if (x < 0 or x >= MAP_COL_COUNT
+            or y < 0 or y >= MAP_ROW_COUNT):
+            return None
+            
+        tile = self.columns[x][y]
+            
         return tile
 
     """
@@ -81,7 +91,9 @@ class Map():
     def column(self, col_idx, start_row=0, end_row=MAP_ROW_COUNT):
         ls = list()
         for row_idx in range(start_row, end_row):
-            ls.append(self.tileAt([col_idx, row_idx]))
+            tile = self.tileAt([col_idx, row_idx])
+            if tile:
+                ls.append(tile)
 
         return ls
     
@@ -92,7 +104,9 @@ class Map():
     def row(self, row_idx, start_col=0, end_col=MAP_COL_COUNT):
         ls = list()
         for col_idx in range(start_col, end_col):
-            ls.append(self.tileAt([col_idx, row_idx]))
+            tile = self.tileAt([col_idx, row_idx])
+            if tile:
+                ls.append(tile)
 
         return ls
 

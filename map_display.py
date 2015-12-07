@@ -1,7 +1,8 @@
 import pyglet
 import resources
-from constants import  (MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, UI_PANEL_WIDTH,
-                        DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED)
+from constants import  (MAP_DISPLAY_WIDTH, MAP_DISPLAY_HEIGHT, UI_PANEL_WIDTH,
+                        DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED, WRAP_X, WRAP_Y,
+                        MAP_ROW_COUNT, MAP_COL_COUNT)
 from util import isEven, mapLocToPixelPos
 from definitions import DiagDir, Terrain, Feature, UnitType, HexDir, SpriteType
 from tilesprite import TileSprite
@@ -10,6 +11,10 @@ import math
 #amount of pixels
 TILE_THRESHOLD_X = 54
 TILE_THRESHOLD_Y = 72
+MAX_CAM_POS_X = TILE_THRESHOLD_X*MAP_COL_COUNT - MAP_DISPLAY_WIDTH + TILE_THRESHOLD_X/2
+MAX_CAM_POS_Y = TILE_THRESHOLD_Y*MAP_ROW_COUNT - MAP_DISPLAY_HEIGHT + TILE_THRESHOLD_Y/2
+
+verbose = False
 
 class MapDisplay():
     def __init__(self, map):
@@ -209,31 +214,23 @@ class MapDisplay():
         dy=0
 
         if dir==DiagDir.LEFT or dir==DiagDir.UL or dir==DiagDir.DL:
-            dx = -SCROLL_SPEED
+            if not WRAP_X and not self.cam_pos[0] < 0:
+                dx = -SCROLL_SPEED
         elif dir==DiagDir.RIGHT or dir==DiagDir.UR or dir==DiagDir.DR:
-            dx = SCROLL_SPEED
+            if not WRAP_X and not self.cam_pos[0] > MAX_CAM_POS_X:
+                dx = SCROLL_SPEED
 
         if dir==DiagDir.UP or dir==DiagDir.UL or dir==DiagDir.UR:
-            dy = SCROLL_SPEED
+            if not WRAP_X and not self.cam_pos[1] < 0:
+                dy = SCROLL_SPEED
         elif dir==DiagDir.DOWN or dir==DiagDir.DR or dir==DiagDir.DL:
-            dy = -SCROLL_SPEED
+            if not WRAP_Y and not self.cam_pos[1] > MAX_CAM_POS_Y:
+                dy = -SCROLL_SPEED
 
         self.cam_pos[0] += dx
         self.cam_pos[1] -= dy
         self.cam_dx -= dx
         self.cam_dy -= dy
-
-        #adjust sprite positions to match camera
-        for sprite in self.draw_list:
-            sprite.x = sprite.pix_pos[0] - self.cam_pos[0]
-            sprite.y = sprite.pix_pos[1] + self.cam_pos[1]
-        
-        self.selection_sprite.x -= dx
-        self.selection_sprite.y -= dy
-        
-        for label in self.move_labels:
-            label.x -= dx
-            label.y -= dy
         
         #adjust columns and/or rows to be drawn,
         #while updating the camera offsets
@@ -270,22 +267,39 @@ class MapDisplay():
             self.removeDrawRow(self.cam_idx[1]+DRAW_Y-1)
             self.cam_idx[1]-=1
             self.addDrawRow(self.cam_idx[1])
+            
+        #adjust sprite positions to match camera
+        for sprite in self.draw_list:
+            sprite.x = sprite.pix_pos[0] - self.cam_pos[0]
+            sprite.y = sprite.pix_pos[1] + self.cam_pos[1]
+        
+        self.selection_sprite.x -= dx
+        self.selection_sprite.y -= dy
+        
+        for label in self.move_labels:
+            label.x -= dx
+            label.y -= dy
 
     def addDrawRow(self, row_idx):
         map_row = self.map.row( row_idx,
                                 start_col=self.cam_idx[0],
                                 end_col=self.cam_idx[0]+DRAW_X)
-        assert(len(map_row) >= DRAW_X)
 
         for tile in map_row:
             self.addTileSprites(tile)
     
     def addDrawColumn(self, col_idx):
+        if verbose:
+            print("addDrawColumn(col_idx="+str(col_idx)+")")
+            print(" draw_list len: " + str(len(self.draw_list)))
+            print(" rows added: " + str(self.cam_idx[1]) + " - " + str(self.cam_idx[1]+DRAW_Y)) 
         map_col = self.map.column(  col_idx,
                                     start_row=self.cam_idx[1],
                                     end_row=self.cam_idx[1]+DRAW_Y)
-        assert(len(map_col) >= DRAW_Y)
-
+        if verbose:
+            print(" new col len: " + str(len(map_col))) 
+        
+        #if column didn't find anything, nothing will be added
         for tile in map_col:
             self.addTileSprites(tile)
     
@@ -343,6 +357,8 @@ class MapDisplay():
         self.__removeSprites(to_remove)
 
     def removeDrawColumn(self, col):
+        if verbose:
+            print ("removeDrawColumn:(col_idx="+str(col)+")")
         to_remove = list(filter(
                 lambda x: isInColumn(x, col), self.draw_list))
         self.__removeSprites(to_remove)
@@ -367,7 +383,7 @@ class MapDisplay():
         #adjust for odd columns
         if not isEven(sprite.map_pos[0]):
             pos[1] += 36
-        pos[1] += WINDOW_HEIGHT/2
+        pos[1] += MAP_DISPLAY_HEIGHT/2
 
         self.cam_pos = pos
 
@@ -380,7 +396,7 @@ class MapDisplay():
         #adjust for odd columns
         if not isEven(tile.pos[0]):
             pos[1] += 36
-        pos[1] += WINDOW_HEIGHT/2
+        pos[1] += MAP_DISPLAY_HEIGHT/2
 
         self.cam_pos = pos
 
@@ -510,20 +526,20 @@ def determine_scroll_dir(mouse_x, mouse_y):
     if mouse_x < SCROLL_MARGIN:
         if mouse_y < SCROLL_MARGIN:
             scroll_dir = DiagDir.DL
-        elif mouse_y > WINDOW_HEIGHT - SCROLL_MARGIN:
+        elif mouse_y > MAP_DISPLAY_HEIGHT - SCROLL_MARGIN:
             scroll_dir = DiagDir.UL
         else:
             scroll_dir = DiagDir.LEFT
     elif mouse_x > MAP_DISPLAY_WIDTH - SCROLL_MARGIN:
         if mouse_y < SCROLL_MARGIN:
             scroll_dir = DiagDir.DR
-        elif mouse_y > WINDOW_HEIGHT - SCROLL_MARGIN:
+        elif mouse_y > MAP_DISPLAY_HEIGHT - SCROLL_MARGIN:
             scroll_dir = DiagDir.UR
         else:
             scroll_dir = DiagDir.RIGHT
     elif mouse_y < SCROLL_MARGIN:
         scroll_dir = DiagDir.DOWN
-    elif mouse_y > WINDOW_HEIGHT - SCROLL_MARGIN:
+    elif mouse_y > MAP_DISPLAY_HEIGHT - SCROLL_MARGIN:
         scroll_dir = DiagDir.UP
 
     return scroll_dir
