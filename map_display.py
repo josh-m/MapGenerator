@@ -545,13 +545,13 @@ def determine_scroll_dir(mouse_x, mouse_y):
     return scroll_dir
 
 def isInRow(t_sprite, row):
-    if t_sprite.map_pos[1] == row:
+    if t_sprite.map_pos[1] == (row % MAP_ROW_COUNT):
         return True
     else:
         return False
 
 def isInColumn(t_sprite, column):
-    if t_sprite.map_pos[0] == column:
+    if t_sprite.map_pos[0] == (column % MAP_COL_COUNT):
         return True
     else:
         return False
