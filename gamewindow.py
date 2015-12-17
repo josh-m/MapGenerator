@@ -1,4 +1,5 @@
 
+
 import pyglet
 from pyglet.window import key, mouse
 
@@ -27,6 +28,10 @@ class GameWindow(pyglet.window.Window):
         self.display_panel = DisplayPanel()
        
         pyglet.clock.schedule_interval(self.update, 1/45.0)
+        
+        #tracks the current position of the mouse,
+        #updated on_mouse_motion
+        self.mouse_pos = None 
 
     def on_draw(self):
         self.clear()
@@ -39,7 +44,9 @@ class GameWindow(pyglet.window.Window):
             self.fps_display.draw()
         
     def update(self, dt):
-        self.map_display.scroll()
+        if self.map_display.scroll():
+            active_tile = self.map_display.updateActiveTile(self.mouse_pos[0], self.mouse_pos[1])
+            self.display_panel.updateTileLabels(active_tile)
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.GRAVE:
@@ -76,6 +83,7 @@ class GameWindow(pyglet.window.Window):
             self.map_display.selectUnitOrDestination(x,y)
                 
     def on_mouse_motion(self,x,y,dx,dy):
+        self.mouse_pos = [x,y]
         self.map_display.updateActiveTile(x,y)
 
         self.display_panel.updateTileLabels(self.map_display.active_tile)

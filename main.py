@@ -1,3 +1,4 @@
+#!python3
 import pyglet
 from game import Game
 

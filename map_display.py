@@ -205,8 +205,10 @@ class MapDisplay():
 
         
     def scroll(self):
+        """scroll: scrolls the camera. returns bool whether a scroll occured"""
+        
         if self.scroll_dir == DiagDir.NONE:
-            return
+            return False
         
         dir = self.scroll_dir
         #shift camera position
@@ -279,6 +281,8 @@ class MapDisplay():
         for label in self.move_labels:
             label.x -= dx
             label.y -= dy
+            
+        return True
 
     def addDrawRow(self, row_idx):
         map_row = self.map.row( row_idx,
@@ -438,6 +442,7 @@ class MapDisplay():
     def updateActiveTile(self, mx,my):
         self.scroll_dir = determine_scroll_dir(mx,my)
         self.active_tile = self.determineClosestTile(mx,my)
+        return self.active_tile
         
     def stopScroll(self):
         self.scroll_dir = DiagDir.NONE
