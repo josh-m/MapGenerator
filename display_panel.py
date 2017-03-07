@@ -46,22 +46,13 @@ class DisplayPanel():
         self.updateMoveCostLabel(tile.move_cost)
             
     def updateTerrainLabel(self, terrain):
-        if terrain == Terrain.WATER:
-            self.terrain_label.text = 'Terrain: Ocean'
-        elif terrain == Terrain.GRASS:
-            self.terrain_label.text = 'Terrain: Grassland'
-        else:
-            self.terrain_label.text = 'Terrain: Unknown'
+        self.terrain_label.text = str(terrain)
     
     def updateFeatureLabel(self, feature):
         if feature == None:
             self.feature_label.text = 'Feature: None'
-        elif feature == Feature.FOREST:
-            self.feature_label.text = 'Feature: Forest'
-        elif feature == Feature.TOWN:
-            self.feature_label.text = 'Feature: Town'
         else:
-            self.feature_label.text = 'Feature: Unknown'
+            self.feature_label.text = str(feature)
             
     def updateUnitLabel(self, unit):
         if unit:
@@ -88,6 +79,8 @@ class DisplayPanel():
                                 
     def updateMoveCostLabel(self, move_cost):
         self.move_cost_label.text = ("Move Cost: "+str(move_cost))
+        
+
         
 class UiLabel(pyglet.text.Label):
     def __init__(self, text, order):

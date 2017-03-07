@@ -3,12 +3,30 @@ from enum import Enum, IntEnum
 class Terrain(Enum):
     BLANK = 0
     WATER = 1
-    GRASS = 2
-    MOUNTAIN = 3
+    ICE = 2
+    GRASS = 10
+    SEMI_DRY_GRASS = 11
+    DRY_GRASS = 12
+    DESERT = 13
+    SNOW_TUNDRA = 14
+    HILLS = 20
+    SNOW_HILLS = 21
+    DRY_HILLS = 22
+    DESERT_HILLS = 23
+    MOUNTAIN = 30
+    DRY_MOUNTAIN = 31
+    SNOW_MOUNTAIN = 32
+
+
 
 class Feature(Enum):
     FOREST = 1
-    TOWN = 2
+    PINE = 2
+    RAINFOREST = 3
+    JUNGLE = 4
+    SAVANNA = 5
+    PALM = 6
+    TOWN = 20
 
 class UiElement(Enum):
     BORDER = 1
@@ -29,7 +47,7 @@ class SpriteType(Enum):
     UNIT = 3
 
 class HexDir(IntEnum):
-    FIRST=0
+    FIRST = 0
     UL=0
     U=1
     UR=2

@@ -6,13 +6,29 @@ Also keeps track of the currently selected tile.
 """
 
 import random
+import math
 from queue import Queue
+from opensimplex import OpenSimplex
 
 from tile import Tile
 from definitions import HexDir, Terrain, Feature, UnitType, UiElement
 from constants import MAP_COL_COUNT, MAP_ROW_COUNT, MAX_DISTANCE, WRAP_X, WRAP_Y
 from util import isEven
 
+ELEVATION_SEALEVEL = 0.05
+ELEVATION_HILL = 0.4
+ELEVATION_MOUNTAIN = 0.6
+
+MOISTURE_DESERT = -0.5
+MOISTURE_DRY = -0.1
+MOISTURE_SEMIDRY = 0.2
+MOISTURE_NORMAL = 0.5
+MOISTURE_WET = 0.8
+
+TEMPERATURE_FROZEN = -0.5
+TEMPERATURE_COLD = -0.2
+TEMPERATURE_TEMPERATE = 0.3
+TEMPERATURE_HOT = 0.5
     
 class Map():
     """
@@ -32,21 +48,29 @@ class Map():
 
             self.columns.append(column)
 
-        #select starting location for town
-        start_loc = [   int(random.triangular(0,n_cols)),
-                        int(random.triangular(0,n_rows))]
-                    
-        self.start_tile = self.tileAt(start_loc)
-
-        self.generateLandmassAround(start_loc)
+        self.generateElevation()
+        self.generateMoisture()
+        self.determineTemperature()
+        self.determineBiomes()
+        
+        self.generateTerrainBorders()
+        
         self.generateForests()
-        self.generateMountains()
+        
 
-        self.start_tile.setTerrain(Terrain.GRASS)
-        self.start_tile.addNewUnit(UnitType.SETTLER)
+        self.selectStartTile()
         
         self.selected_tile = None
 
+    def selectStartTile(self):
+        walkable_tiles = [tile for tile in self.allTiles() if tile.isEnterableByLandUnit()]
+        
+        print( len(walkable_tiles))
+        
+        self.start_tile = random.choice(walkable_tiles)
+
+        self.start_tile.addNewUnit(UnitType.SETTLER)
+        
     """
     selectTile:
     Given a tile, sets its UI element to a border and
@@ -131,10 +155,200 @@ class Map():
                 tile.visited = False
                 tile.prev_tile = None
                 tile.distance = MAX_DISTANCE
+
     
     #
     #World building methods
     #
+
+    """
+    generateElevation:
+    Generates elevation using simplex noise.
+    """
+    def generateElevation(self, seed=None, freq=6.0):
+        if not seed:
+            seed = random.randint(0,999999)
+        else:
+            seed =  int(seed)
+            
+        simplex = OpenSimplex(seed)
+        seed += 1
+        simplex2 = OpenSimplex(seed)
+        seed += 1
+        simplex3 = OpenSimplex(seed)
+        
+        """
+        a = 0.6
+        b = 1.2
+        c = 0.7
+        """
+        a = 0.1
+        b = 1.0
+        c = 1.0
+        
+        low = 100
+        high = -100
+        sum = 0
+        i=0
+        
+        low_nx = 100
+        high_nx = -100
+        low_d = 100
+        high_d = -100
+        
+        for col in self.columns:
+            for tile in col:                
+                #set noise values for tiles between [0,1],
+                #makes input normalized across disparate map sizes
+                nx = tile.pos[0] / self.size[0] - 0.5
+                ny = tile.pos[1] / self.size[1] - 0.5
+                
+                
+                elevation = (
+                    simplex.noise2d(freq * nx, freq * ny) + 
+                    0.5 * simplex2.noise2d(3.0*freq * nx, 3.0*freq*ny) + #higher freq less effect
+                    0.25 * simplex3.noise2d(100.0*freq * nx, 100.0*freq*ny)
+                )
+                
+                d = 2.0 * max(abs(nx) , abs(ny)) #manhattan distance
+                
+                
+                elevation = (elevation + a) * (1 - d**2)
+                    
+                #elevation = elevation + a - b*d**c
+                #elevation = elevation ** 2
+                
+                tile.elevation =  elevation
+                                    
+                #DEBUG
+                if elevation < low:
+                    low = elevation
+                elif elevation > high:
+                    high = elevation
+                sum += elevation
+                i += 1
+                    
+                if  nx < low_nx:
+                    low_nx = nx
+                elif nx > high_nx:
+                    high_nx = nx
+                if  d < low_d:
+                    low_d = d
+                elif d > high_d:
+                    high_d = d
+           
+        #DEBUG
+        avg = sum /  i
+                    
+        print('Elevation: MIN={} MAX={} AVG={}'.format(low,high,avg))
+        print('Input nx: MIN={} MAX={}'.format(low_nx,high_nx))
+        print('Manhattan Distance: MIN={} MAX={}'.format(low_d,high_d))
+          
+
+    def generateMoisture(self, seed=None):
+        if not seed:
+            seed = random.randint(0,999999)
+        else:
+            seed =  int(seed)
+            
+        simplex = OpenSimplex(seed)
+
+        for col in self.columns:
+            for tile in col:                
+                #set noise values for tiles between [0,1],
+                #makes input normalized across disparate map sizes
+                nx = tile.pos[0] / self.size[0] - 0.5
+                ny = tile.pos[1] / self.size[1] - 0.5
+                
+                freq = 12.0
+                
+                moisture = (
+                    simplex.noise2d(freq * nx, freq * ny) 
+                )
+
+                tile.moisture =  moisture
+                    
+    def determineTemperature(self):
+        #debug
+        low_temp = 9999
+        high_temp = -9999
+    
+        for col in self.columns:
+            for tile in col:
+                latitude_mod = abs( tile.pos[1]/ self.size[1] - 0.5)
+                
+                tile.base_temperature = 1.5 - 0.5*(tile.elevation + 1) - 4*latitude_mod
+                
+                if tile.base_temperature < low_temp:
+                    low_temp = tile.base_temperature
+                elif tile.base_temperature > high_temp:
+                    high_temp = tile.base_temperature
+         
+        #debug
+        print("Low Temp: {}  High Temp: {}".format(low_temp, high_temp))
+        
+    def determineBiomes(self):
+        for tile in self.allTiles():
+            #Elevation
+            if tile.elevation < ELEVATION_SEALEVEL:
+                if tile.base_temperature < TEMPERATURE_FROZEN:
+                    tile.setTerrain(Terrain.ICE)
+                else:
+                    tile.setTerrain(Terrain.WATER)
+                
+            elif tile.elevation < ELEVATION_HILL:
+                if tile.base_temperature < TEMPERATURE_COLD:
+                    tile.setTerrain(Terrain.SNOW_TUNDRA)
+                    
+                else:
+                    if tile.moisture < MOISTURE_DESERT:
+                        tile.setTerrain(Terrain.DESERT)
+                    elif tile.moisture < MOISTURE_DRY:
+                        tile.setTerrain(Terrain.DRY_GRASS)
+                    elif tile.moisture < MOISTURE_SEMIDRY:
+                        tile.setTerrain(Terrain.SEMI_DRY_GRASS)
+                    else:
+                        tile.setTerrain(Terrain.GRASS)
+                
+            elif tile.elevation < ELEVATION_MOUNTAIN:
+                if tile.base_temperature < TEMPERATURE_COLD:
+                    tile.setTerrain(Terrain.SNOW_HILLS)
+                else:
+                    if tile.moisture < MOISTURE_DRY:
+                        tile.setTerrain(Terrain.DESERT_HILLS)
+                    elif tile.moisture < MOISTURE_NORMAL:
+                        tile.setTerrain(Terrain.DRY_HILLS)
+                    else:
+                        tile.setTerrain(Terrain.HILLS)
+            else:
+                if tile.moisture < MOISTURE_DRY:
+                    tile.setTerrain(Terrain.DRY_MOUNTAIN)
+                else:
+                    if tile.base_temperature < TEMPERATURE_COLD:
+                        tile.setTerrain(Terrain.SNOW_MOUNTAIN)
+                    else:
+                        if tile.moisture < MOISTURE_NORMAL:
+                            tile.setTerrain(Terrain.DRY_MOUNTAIN)
+                        else:
+                            tile.setTerrain(Terrain.MOUNTAIN)
+    
+    def generateTerrainBorders(self):
+        for tile in self.allTiles():
+            nw_neighbor = self.tileAt(self.neighborAt(tile.pos, HexDir.UL))
+            n_neighbor = self.tileAt(self.neighborAt(tile.pos, HexDir.U))
+            ne_neighbor = self.tileAt(self.neighborAt(tile.pos, HexDir.UR))
+            sw_neighbor = self.tileAt(self.neighborAt(tile.pos, HexDir.DL))
+            s_neighbor = self.tileAt(self.neighborAt(tile.pos, HexDir.D))
+            se_neighbor = self.tileAt(self.neighborAt(tile.pos, HexDir.DR))
+            
+            neighbors = [nw_neighbor, n_neighbor, ne_neighbor,
+                sw_neighbor, s_neighbor, se_neighbor]
+            
+            dir = HexDir.UL        
+            for neighbor in neighbors:
+                if neighbor:
+                    tile.addBorder(neighbor.terrain, dir)   
+                dir += 1
     
     """
     generateLandmassAround:
@@ -187,7 +401,12 @@ class Map():
 
         for tile in land:
             if (random.uniform(0, 100.0) < gen_chance) and (not tile.feature):
-                tile.setFeature(Feature.FOREST)
+                if tile.terrain == Terrain.GRASS:
+                    tile.setFeature(Feature.FOREST)
+                elif tile.terrain == Terrain.DRY_GRASS:
+                    tile.setFeature(Feature.SAVANNA)
+                elif tile.terrain == Terrain.DESERT:
+                    tile.setFeature(Feature.PALM)
                 self.spreadForest(tile)
                 self.resetAllVisited()
 
@@ -200,27 +419,19 @@ class Map():
         tile.visited = True
         
         if (random.uniform(0,99.9) < gen_chance):
-            tile.setFeature(Feature.FOREST)
+            if tile.terrain == Terrain.GRASS:
+                tile.setFeature(Feature.FOREST)
+            elif tile.terrain == Terrain.DRY_GRASS:
+                tile.setFeature(Feature.SAVANNA)
+            elif tile.terrain == Terrain.DESERT:
+                tile.setFeature(Feature.PALM)
+                
             neighbors = self.neighborsOf(tile)
             neighbors = [_tile for _tile in neighbors if _tile.isFlatland()]
             neighbors = filter(self.notVisited, neighbors)
         
             for neighbor_tile in neighbors:
                 self.spreadForest(neighbor_tile, gen_chance - 25.0)
-
-    """
-    generateMountains:
-    Adds mountains to the map.
-    TODO: Create mountain ranges instead of simple random placement
-    """
-    def generateMountains(self):
-        land = list()
-        for col in self.columns:
-            land += [tile for tile in col if tile.isFlatland() and tile.feature == None]
-            
-        for tile in land:
-            if random.uniform(0,100.0) < 5:
-                tile.setTerrain(Terrain.MOUNTAIN)
             
     """
     neighborsOf:
@@ -245,7 +456,7 @@ class Map():
         return ls
 
     """
-    neightborAt:
+    neighborAt:
     Given an index on the map and a direction (HexDir), returns
     that neighboring tile. Supports world wrapping.
     """
@@ -389,3 +600,11 @@ class Map():
                 units += tile.unit_list
     
         return units
+        
+    def allTiles(self):
+        tiles = list()
+        for col in self.columns:
+            for tile in col:
+                tiles.append(tile)
+                
+        return tiles
