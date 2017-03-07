@@ -11,6 +11,8 @@ class Unit():
         
         self.map_idx = pos
         
+        self.is_moving = False
+        
     def restoreMoves(self):
         self.moves_left = self.move_speed
         

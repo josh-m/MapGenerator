@@ -236,7 +236,7 @@ class Tile():
     def getAbsolutePixelPos(self):
         return deepcopy(self.abs_pixel_pos)
         
-    def getPixelPos(self, scale):
+    def getPixelPos(self, scale=1.0):
         return mapLocToPixelPos(self.pos, scale)
         
     """
@@ -253,13 +253,15 @@ class Tile():
             self.terrain == Terrain.GRASS or
             self.terrain == Terrain.SEMI_DRY_GRASS or
             self.terrain == Terrain.DRY_GRASS or
-            self.terrain == Terrain.DESERT)
+            self.terrain == Terrain.DESERT or
+            self.terrain == Terrain.SNOW_TUNDRA)
             
     def isHills(self):
         return (
             self.terrain == Terrain.HILLS or
             self.terrain == Terrain.DRY_HILLS or
-            self.terrain == Terrain.DESERT_HILLS)
+            self.terrain == Terrain.DESERT_HILLS or
+            self.terrain == Terrain.SNOW_HILLS)
             
     def isMountain(self):
         return (
@@ -278,3 +280,6 @@ class Tile():
     
     def isEnterableByLandUnit(self):
         return self.isFlatland() or self.isHills()
+        
+    def hasUnit(self):
+        return len(self.unit_list) > 0

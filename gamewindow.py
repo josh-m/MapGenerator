@@ -13,7 +13,6 @@ from display_panel import DisplayPanel
 from map_display import MapDisplay
 
 
-
 class GameWindow(pyglet.window.Window):
 
     def __init__(self, map, *args, **kwargs):
@@ -126,7 +125,9 @@ class GameWindow(pyglet.window.Window):
             self.minimap_vertex_list.vertices[i:i+2] = tile.pos[0] + MAP_DISPLAY_WIDTH, MAP_ROW_COUNT - tile.pos[1]
             
             color = (0,0,0)
-            if tile.hasForest():
+            if tile.hasUnit():
+                color = (255,0,0)
+            elif tile.hasForest():
                 color = (30,50,5)
             elif tile.terrain == Terrain.WATER:
                 color = (0,0,225)

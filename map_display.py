@@ -85,6 +85,8 @@ class MapDisplay():
             tiles = self.map.allTiles()
             for tile in tiles:
                 self.addTileSprites(tile)
+                
+        self.move_labels = self.createMoveLabels()
 
     def changeZoom(self, zoom_mod):
         self.camera_zoom += zoom_mod
@@ -122,6 +124,8 @@ class MapDisplay():
                 label.draw()
 
     def createMoveLabels(self):
+        if not self.selected_unit_tile:
+            return
         units = self.selected_unit_tile.unit_list
         if len(units) == 0:
             return
@@ -311,9 +315,10 @@ class MapDisplay():
         self.selection_sprite.x -= dx
         self.selection_sprite.y -= dy
 
-        for label in self.move_labels:
-            label.x -= dx
-            label.y -= dy
+        if self.move_labels:
+            for label in self.move_labels:
+                label.x -= dx
+                label.y -= dy
 
         return True
 
@@ -370,7 +375,7 @@ class MapDisplay():
                 ftr_sprite.scale = 0.8
             self.draw_list.append(ftr_sprite)
 
-        if len(tile.unit_list) > 0:
+        if tile.hasUnit():
             unit_sprite = TileSprite(   map_pos = tile.getMapPos(),
                                         sprite_type = SpriteType.UNIT,
                                         img = tile.unitImg(),
@@ -571,6 +576,16 @@ class MapDisplay():
 
                 self.path_list = self.path_list[i:]
                 self.move_labels = self.move_labels[1:]
+                
+    def mapPosToScreenPos(self, map_pos):
+        tile = self.map.tileAt(map_pos)
+        pix_pos = tile.getPixelPos()
+        
+        #camera adjust
+        pix_pos[0] -= self.cam_pos[0]
+        pix_pos[1] += self.cam_pos[1]
+        
+        return pix_pos
 
 def pixelPosToMapLoc(pix_pos):
     x_offset = 54

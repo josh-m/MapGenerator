@@ -9,6 +9,7 @@ import random
 import math
 from queue import Queue
 from opensimplex import OpenSimplex
+import pickle
 
 from tile import Tile
 from definitions import HexDir, Terrain, Feature, UnitType, UiElement
@@ -38,7 +39,7 @@ class Map():
     By default creates a map with the default size.
     Supply two integers to constructor to generate a different size.
     """
-    def __init__(self, n_cols=MAP_COL_COUNT, n_rows=MAP_ROW_COUNT):
+    def __init__(self, n_cols=MAP_COL_COUNT, n_rows=MAP_ROW_COUNT, save_map=True):
         self.size = (n_cols, n_rows)
         self.columns = list()
 
@@ -63,6 +64,9 @@ class Map():
         self.selectStartTile()
         
         self.selected_tile = None
+        
+        if save_map:
+            pickle.dump(self, open('save.map','wb'))
 
     def selectStartTile(self):
         walkable_tiles = [tile for tile in self.allTiles() if tile.isEnterableByLandUnit()]
