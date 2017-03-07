@@ -231,10 +231,10 @@ class MapDisplay():
 
     def scroll(self):
         """scroll: scrolls the camera. returns bool whether a scroll occured"""
-        
-        print("cam_pos {}, {}".format(self.cam_pos[0], self.cam_pos[1]))
-        print("cam_idx {}, {}".format(self.cam_idx[0], self.cam_idx[1]))
-        print("cam_d {}, {}".format(self.cam_dx, self.cam_dy))
+        if verbose:
+            print("cam_pos {}, {}".format(self.cam_pos[0], self.cam_pos[1]))
+            print("cam_idx {}, {}".format(self.cam_idx[0], self.cam_idx[1]))
+            print("cam_d {}, {}".format(self.cam_dx, self.cam_dy))
 
         if self.scroll_dir == DiagDir.NONE:
             return False

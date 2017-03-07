@@ -29,6 +29,8 @@ TEMPERATURE_FROZEN = -0.5
 TEMPERATURE_COLD = -0.2
 TEMPERATURE_TEMPERATE = 0.3
 TEMPERATURE_HOT = 0.5
+
+verbose = False
     
 class Map():
     """
@@ -64,9 +66,6 @@ class Map():
 
     def selectStartTile(self):
         walkable_tiles = [tile for tile in self.allTiles() if tile.isEnterableByLandUnit()]
-        
-        print( len(walkable_tiles))
-        
         self.start_tile = random.choice(walkable_tiles)
 
         self.start_tile.addNewUnit(UnitType.SETTLER)
@@ -239,10 +238,11 @@ class Map():
            
         #DEBUG
         avg = sum /  i
-                    
-        print('Elevation: MIN={} MAX={} AVG={}'.format(low,high,avg))
-        print('Input nx: MIN={} MAX={}'.format(low_nx,high_nx))
-        print('Manhattan Distance: MIN={} MAX={}'.format(low_d,high_d))
+          
+        if verbose:
+            print('Elevation: MIN={} MAX={} AVG={}'.format(low,high,avg))
+            print('Input nx: MIN={} MAX={}'.format(low_nx,high_nx))
+            print('Manhattan Distance: MIN={} MAX={}'.format(low_d,high_d))
           
 
     def generateMoisture(self, seed=None):
@@ -284,8 +284,8 @@ class Map():
                 elif tile.base_temperature > high_temp:
                     high_temp = tile.base_temperature
          
-        #debug
-        print("Low Temp: {}  High Temp: {}".format(low_temp, high_temp))
+        if verbose:
+            print("Low Temp: {}  High Temp: {}".format(low_temp, high_temp))
         
     def determineBiomes(self):
         for tile in self.allTiles():

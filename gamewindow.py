@@ -46,6 +46,9 @@ class GameWindow(pyglet.window.Window):
         self.display_panel.draw()
         if self._show_fps:
             self.fps_display.draw()
+            
+        if self.minimap_enabled:
+            self.drawMiniMap()
 
     def update(self, dt):
         if self.map_display.scroll():
@@ -66,7 +69,6 @@ class GameWindow(pyglet.window.Window):
                 self.map_display.moveUnit(unit, tiles[0], tiles[1])
 
             self.map_display.drawNewTurn()
-
 
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
@@ -138,12 +140,21 @@ class GameWindow(pyglet.window.Window):
                 color = (150,200,130)
             elif tile.terrain == Terrain.DRY_HILLS:
                 color = (120,120,100)
-            elif tile.terrain == Terrain.MOUNTAIN or tile.terrain == Terrain.DRY_MOUNTAIN:
-                color = (230,230,230)
+            elif (
+            tile.terrain == Terrain.MOUNTAIN or 
+            tile.terrain == Terrain.DRY_MOUNTAIN or
+            tile.terrain == Terrain.SNOW_MOUNTAIN):
+                color = (56,52,47)
             elif tile.terrain ==  Terrain.DESERT:
                 color = (255,200,0)
             elif tile.terrain == Terrain.DESERT_HILLS:
                 color = (205,160, 0)
+            elif tile.terrain == Terrain.SNOW_TUNDRA:
+                color = (255,255,255)
+            elif tile.terrain == Terrain.SNOW_HILLS:
+                color = (220,220,220)
+            elif tile.terrain == Terrain.ICE:
+                color = (100,190,215)
                 
             self.minimap_vertex_list.colors[j:j+3] = color
                 
