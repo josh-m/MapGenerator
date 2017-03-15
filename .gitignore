@@ -1,5 +1,6 @@
 #Python compilation files
 *.pyc
+*.pyo
 
 # Windows image file caches
 Thumbs.db
