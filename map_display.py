@@ -16,8 +16,6 @@ MAX_CAM_POS_X = TILE_THRESHOLD_X*MAP_COL_COUNT - MAP_DISPLAY_WIDTH + TILE_THRESH
 MAX_CAM_POS_Y = TILE_THRESHOLD_Y*MAP_ROW_COUNT - MAP_DISPLAY_HEIGHT + TILE_THRESHOLD_Y/2
 
 verbose = False
-draw_all_tiles = False
-
 
 class MapDisplay():
     def __init__(self, map):
@@ -78,13 +76,8 @@ class MapDisplay():
 
             
         #Add sprites within camera to the draw batch
-        if not draw_all_tiles:
-            for i in range(self.cam_idx[0], min(self.cam_idx[0]+DRAW_X, len(self.map.columns))):
-                self.addDrawColumn(i)
-        else:
-            tiles = self.map.allTiles()
-            for tile in tiles:
-                self.addTileSprites(tile)
+        for i in range(self.cam_idx[0], min(self.cam_idx[0]+DRAW_X, len(self.map.columns))):
+            self.addDrawColumn(i)
                 
         self.move_labels = self.createMoveLabels()
 
@@ -268,42 +261,41 @@ class MapDisplay():
         self.cam_dy -= dy
 
 
-        if not draw_all_tiles:
-            #adjust columns and/or rows to be drawn,
-            #while updating the camera offsets
-            if self.cam_dx > TILE_THRESHOLD_X:
-                #print("shift left")
-                self.cam_dx -= TILE_THRESHOLD_X
+        #adjust columns and/or rows to be drawn,
+        #while updating the camera offsets
+        if self.cam_dx > TILE_THRESHOLD_X:
+            #print("shift left")
+            self.cam_dx -= TILE_THRESHOLD_X
 
-                self.removeDrawColumn(self.cam_idx[0]+DRAW_X-1)
+            self.removeDrawColumn(self.cam_idx[0]+DRAW_X-1)
 
-                self.cam_idx[0]-=1
-                self.addDrawColumn(self.cam_idx[0])
+            self.cam_idx[0]-=1
+            self.addDrawColumn(self.cam_idx[0])
 
-            elif self.cam_dx < -TILE_THRESHOLD_X:
-                #print("shift right")
-                self.cam_dx += TILE_THRESHOLD_X
+        elif self.cam_dx < -TILE_THRESHOLD_X:
+            #print("shift right")
+            self.cam_dx += TILE_THRESHOLD_X
 
-                self.removeDrawColumn(self.cam_idx[0])
-                self.cam_idx[0]+=1
+            self.removeDrawColumn(self.cam_idx[0])
+            self.cam_idx[0]+=1
 
-                self.addDrawColumn(self.cam_idx[0]+DRAW_X-1)
+            self.addDrawColumn(self.cam_idx[0]+DRAW_X-1)
 
-            if self.cam_dy > TILE_THRESHOLD_Y:
-                #print ("shift down")
-                self.cam_dy -= TILE_THRESHOLD_Y
+        if self.cam_dy > TILE_THRESHOLD_Y:
+            #print ("shift down")
+            self.cam_dy -= TILE_THRESHOLD_Y
 
-                self.removeDrawRow(self.cam_idx[1])
-                self.cam_idx[1]+=1
+            self.removeDrawRow(self.cam_idx[1])
+            self.cam_idx[1]+=1
 
-                self.addDrawRow(self.cam_idx[1]+DRAW_Y-1)
+            self.addDrawRow(self.cam_idx[1]+DRAW_Y-1)
 
-            elif self.cam_dy < -TILE_THRESHOLD_Y:
-                #print("shift up")
-                self.cam_dy += TILE_THRESHOLD_Y
-                self.removeDrawRow(self.cam_idx[1]+DRAW_Y-1)
-                self.cam_idx[1]-=1
-                self.addDrawRow(self.cam_idx[1])
+        elif self.cam_dy < -TILE_THRESHOLD_Y:
+            #print("shift up")
+            self.cam_dy += TILE_THRESHOLD_Y
+            self.removeDrawRow(self.cam_idx[1]+DRAW_Y-1)
+            self.cam_idx[1]-=1
+            self.addDrawRow(self.cam_idx[1])
 
 
 
