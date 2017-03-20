@@ -1,6 +1,6 @@
 #!python3
 import pyglet
-from game import Game
+from map.game import Game
 
 def main():
     game = Game()
