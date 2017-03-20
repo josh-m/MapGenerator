@@ -40,7 +40,6 @@ class GameWindow(pyglet.window.Window):
         self.clear()
 
         self.map_display.batch.draw()
-        self.map_display.drawPaths()
 
         self.display_panel.draw()
         if self._show_fps:
@@ -57,44 +56,22 @@ class GameWindow(pyglet.window.Window):
     def on_key_press(self, symbol, modifiers):
         if symbol == key.GRAVE:
             self._show_fps = not self._show_fps
-        elif symbol == key.SPACE:
-            self.turn += 1
-            self.display_panel.updateTurnLabel(self.turn)
-
-            all_units = self.map.allUnits()
-            for unit in all_units:
-                unit.restoreMoves()
-                tiles = self.map.moveUnit(unit)
-                self.map_display.moveUnit(unit, tiles[0], tiles[1])
-
-            self.map_display.drawNewTurn()
 
     def on_mouse_press(self,x,y,button,modifiers):
         if button == mouse.LEFT:
-            if x <= MAP_DISPLAY_WIDTH:
-                self.map_display.pathFromSelectedToActiveTile()
-            else:
+            if x > MAP_DISPLAY_WIDTH:
                 if y < MAP_ROW_COUNT:
                     self.moveCameraFromMinimap((x-MAP_DISPLAY_WIDTH, MAP_ROW_COUNT - y))
 
         elif button == mouse.RIGHT:
-            self.map_display.deselectUnitTile()
             self.display_panel.updateTileLabels(self.map_display.active_tile)
 
     def on_mouse_drag(self, x,y, dx,dy, buttons, modifiers):
         self.on_mouse_motion(x,y,dx,dy)
 
-        if buttons & mouse.LEFT:
-            self.map_display.dragPathFromSelectedToActiveTile()
-
-    def on_mouse_release(self,x,y,button,modifiers):
-        if button == mouse.LEFT:
-            self.map_display.selectUnitOrDestination(x,y)
-
     def on_mouse_motion(self,x,y,dx,dy):
         self.mouse_pos = [x,y]
         self.map_display.updateActiveTile(x,y)
-
         self.display_panel.updateTileLabels(self.map_display.active_tile)
 
     def on_mouse_leave(self,x,y):

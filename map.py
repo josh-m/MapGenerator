@@ -59,34 +59,15 @@ class Map():
         self.generateTerrainBorders()
         
         self.generateForests()
-        
 
-        self.selectStartTile()
-        
-        self.selected_tile = None
+        self.determineStartTile()
         
         if save_map:
             pickle.dump(self, open('save.map','wb'))
 
-    def selectStartTile(self):
+    def determineStartTile(self):
         walkable_tiles = [tile for tile in self.allTiles() if tile.isEnterableByLandUnit()]
         self.start_tile = random.choice(walkable_tiles)
-
-        self.start_tile.addNewUnit(UnitType.SETTLER)
-        
-    """
-    selectTile:
-    Given a tile, sets its UI element to a border and
-    tracks the tile as the currently selected tile.
-    """
-    #TODO: Check that this tile is within this map.
-    #TODO: Consider removal, is never called.    
-    def selectTile(self, tile):
-        if tile:
-            if self.selected_tile:
-                self.selected_tile.ui_element = None
-            tile.ui_element = UiElement.BORDER
-            self.selected_tile = tile
 
     """
     tileAt:
@@ -138,17 +119,6 @@ class Map():
         return ls
 
     """
-    notVisited:
-    Checks if a tile's visited attribute is set.
-    (The visited attribute is used as a temporary state variable for
-    generation algorithms)
-    """
-    def notVisited(self, tile):
-        if (not tile.visited):
-            return True
-        else:
-            return False
-    """
     resetAllVisited:
     Sets the visited attribute to false for every tile in this Map.
     """
@@ -159,7 +129,6 @@ class Map():
                 tile.prev_tile = None
                 tile.distance = MAX_DISTANCE
 
-    
     #
     #World building methods
     #
@@ -432,7 +401,7 @@ class Map():
                 
             neighbors = self.neighborsOf(tile)
             neighbors = [_tile for _tile in neighbors if _tile.isFlatland()]
-            neighbors = filter(self.notVisited, neighbors)
+            neighbors = [_tile for _tile in neighbors if _tile.notVisited()]
         
             for neighbor_tile in neighbors:
                 self.spreadForest(neighbor_tile, gen_chance - 25.0)
@@ -567,44 +536,7 @@ class Map():
     
         self.resetAllVisited()
         return path_list
-    
-    def moveUnit(self, unit):
-        if len(unit.move_list) < 1:
-            return [self.tileAt(unit.map_idx),self.tileAt(unit.map_idx)]
-        moves = unit.moves_left
-        if moves <= 0:
-            return [self.tileAt(unit.map_idx),self.tileAt(unit.map_idx)]
-        
-        start_pos = unit.map_idx
-        i=1
-        next_tile = None
-        for tile_idx in unit.move_list[1:]:
-            next_tile = self.tileAt(tile_idx)
-            moves -= next_tile.move_cost
-            unit.moves_left -= next_tile.move_cost
-            i += 1
-            if moves <= 0 or tile_idx == unit.move_list[-1]:
-                next_tile.addUnit(unit)
-                unit.setMapIdx(tile_idx)
-                break
-        
-        remaining_moves = unit.move_list[i-1:]
-        unit.setMovePath(remaining_moves)
-                
-        if not next_tile:
-        #The unit did not move
-            return [self.tileAt(unit.map_idx), self.tileAt(unit.map_idx)]
 
-        return [self.tileAt(start_pos), self.tileAt(unit.map_idx)]
-    
-    def allUnits(self):
-        units = list()
-        for col in self.columns:
-            for tile in col:
-                units += tile.unit_list
-    
-        return units
-        
     def allTiles(self):
         tiles = list()
         for col in self.columns:

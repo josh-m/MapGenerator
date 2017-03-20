@@ -1,12 +1,9 @@
 from definitions import Terrain, Feature, UnitType, UiElement, HexDir
 import resources
 from util import mapLocToPixelPos
+from constants import MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, MAX_DISTANCE
 
 from copy import deepcopy
-
-from constants import MAP_DISPLAY_WIDTH, WINDOW_HEIGHT, MAX_DISTANCE
-import unit
-
 
 class Tile():
     def __init__(self, pos, terr=Terrain.WATER, feature=None, unit=None, ui=None):
@@ -283,3 +280,6 @@ class Tile():
         
     def hasUnit(self):
         return len(self.unit_list) > 0
+        
+    def notVisited(self):
+        return not self.visited
