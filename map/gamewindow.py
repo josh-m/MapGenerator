@@ -3,12 +3,13 @@
 import pyglet
 from pyglet.window import key, mouse
 
+import ctypes
 
 from copy import deepcopy
 
 from map.definitions import DiagDir, Terrain, Feature, UnitType, HexDir, SpriteType
 from map.constants import  (WINDOW_HEIGHT, MAP_DISPLAY_WIDTH, MAP_DISPLAY_HEIGHT, UI_PANEL_WIDTH,
-                        DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED, WRAP_X, WRAP_Y, MAP_ROW_COUNT)
+                        DRAW_X, DRAW_Y, SCROLL_MARGIN, SCROLL_SPEED, WRAP_X, WRAP_Y, MAP_ROW_COUNT, MAP_COL_COUNT)
 from map.display_panel import DisplayPanel
 from map.map_display import MapDisplay
 
@@ -35,6 +36,12 @@ class GameWindow(pyglet.window.Window):
         self.mouse_pos = None
 
         self.initMiniMap()
+        
+        pixels = self.createMiniMapPixelArray()
+        pix_arr = (ctypes.c_ubyte * len(pixels))(*pixels)
+        image_data = pyglet.image.ImageData(MAP_COL_COUNT, MAP_ROW_COUNT, 'RGB', pix_arr)
+        image_data.save('ss2.png')
+        
         
     def on_draw(self):
         self.clear()
@@ -101,44 +108,26 @@ class GameWindow(pyglet.window.Window):
         for tile in self.map.allTiles():
             self.minimap_vertex_list.vertices[i:i+2] = tile.pos[0] + MAP_DISPLAY_WIDTH, MAP_ROW_COUNT - tile.pos[1]
             
-            color = (0,0,0)
-            if tile.hasUnit():
-                color = (255,0,0)
-            elif tile.hasForest():
-                color = (30,50,5)
-            elif tile.terrain == Terrain.WATER:
-                color = (0,0,225)
-            elif tile.terrain == Terrain.GRASS:
-                color = (0,200,0)
-            elif tile.terrain == Terrain.SEMI_DRY_GRASS:
-                color = (30, 180, 0)
-            elif tile.terrain == Terrain.DRY_GRASS:
-                color = (130, 150, 0)
-            elif tile.terrain ==  Terrain.HILLS:
-                color = (150,200,130)
-            elif tile.terrain == Terrain.DRY_HILLS:
-                color = (120,120,100)
-            elif (
-            tile.terrain == Terrain.MOUNTAIN or 
-            tile.terrain == Terrain.DRY_MOUNTAIN or
-            tile.terrain == Terrain.SNOW_MOUNTAIN):
-                color = (56,52,47)
-            elif tile.terrain ==  Terrain.DESERT:
-                color = (255,200,0)
-            elif tile.terrain == Terrain.DESERT_HILLS:
-                color = (205,160, 0)
-            elif tile.terrain == Terrain.SNOW_TUNDRA:
-                color = (255,255,255)
-            elif tile.terrain == Terrain.SNOW_HILLS:
-                color = (220,220,220)
-            elif tile.terrain == Terrain.ICE:
-                color = (100,190,215)
+            color = tileMinimapColor(tile)
                 
             self.minimap_vertex_list.colors[j:j+3] = color
-                
+            
             i += 2
             j += 3
             
+        print( self.minimap_vertex_list.colors)
+  
+    def createMiniMapPixelArray(self):
+        pix_array = [0,0,0] * (MAP_ROW_COUNT * MAP_COL_COUNT)
+        
+        tiles = self.map.allTiles()
+        
+        for tile in tiles:
+            start_idx = (MAP_COL_COUNT * tile.pos[1] * 3) + (tile.pos[0] * 3) 
+            pix_array[start_idx : start_idx+3] = tileMinimapColor(tile)
+            
+        return pix_array
+    
     def drawMiniMap(self):
         self.minimap_vertex_list.draw(pyglet.gl.GL_POINTS)
         
@@ -166,3 +155,40 @@ class GameWindow(pyglet.window.Window):
             )),
             ('c3B', (255,255,0) * 8)
         )
+        
+def tileMinimapColor(tile):
+    color = (0,0,0)
+    
+    if tile.hasUnit():
+        color = (255,0,0)
+    elif tile.hasForest():
+        color = (30,50,5)
+    elif tile.terrain == Terrain.WATER:
+        color = (0,0,225)
+    elif tile.terrain == Terrain.GRASS:
+        color = (0,200,0)
+    elif tile.terrain == Terrain.SEMI_DRY_GRASS:
+        color = (30, 180, 0)
+    elif tile.terrain == Terrain.DRY_GRASS:
+        color = (130, 150, 0)
+    elif tile.terrain ==  Terrain.HILLS:
+        color = (150,200,130)
+    elif tile.terrain == Terrain.DRY_HILLS:
+        color = (120,120,100)
+    elif (
+    tile.terrain == Terrain.MOUNTAIN or 
+    tile.terrain == Terrain.DRY_MOUNTAIN or
+    tile.terrain == Terrain.SNOW_MOUNTAIN):
+        color = (56,52,47)
+    elif tile.terrain ==  Terrain.DESERT:
+        color = (255,200,0)
+    elif tile.terrain == Terrain.DESERT_HILLS:
+        color = (205,160, 0)
+    elif tile.terrain == Terrain.SNOW_TUNDRA:
+        color = (255,255,255)
+    elif tile.terrain == Terrain.SNOW_HILLS:
+        color = (220,220,220)
+    elif tile.terrain == Terrain.ICE:
+        color = (100,190,215)
+        
+    return color

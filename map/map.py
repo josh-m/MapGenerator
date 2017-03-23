@@ -63,7 +63,9 @@ class Map():
         self.determineStartTile()
         
         if save_map:
-            pickle.dump(self, open('save.map','wb'))
+            with open('saves/save.map', 'wb') as f:
+                print('saving map')
+                pickle.dump(self, f)
 
     def determineStartTile(self):
         walkable_tiles = [tile for tile in self.allTiles() if tile.isEnterableByLandUnit()]
