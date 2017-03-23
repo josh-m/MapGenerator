@@ -27,6 +27,7 @@ class MenuScreen(Screen):
         self.gen_map_btn.text = 'Generating New Map...'
         self.gen_map_btn.disabled = True
         
+        Thread(target = self.updateMap, daemon = True).start()
     
     def mapGen(self):
         map = Map()

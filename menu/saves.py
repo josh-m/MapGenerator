@@ -15,6 +15,7 @@ class SavesData(GridLayout):
         super(SavesData, self).__init__(**kwargs)
         
         files = listdir('saves')
+        files = [f for f in files if len(f) > 4 and f[-4:] == '.map']
         
         for filename in files:
             elem= SaveDataButton(

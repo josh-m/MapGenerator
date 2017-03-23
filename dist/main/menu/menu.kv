@@ -1,0 +1,45 @@
+#:kivy 1.9.1
+#:import SavesScrollView menu.saves
+#:import SavesData menu.saves
+
+<SavesData>:
+    name: 'saves_data'
+    height: self.minimum_height
+    cols: 1
+    spacing: 1
+
+<MenuScreen>:
+    name: 'menu_screen'
+    id: menu_screen
+    map_preview: preview_image
+    gen_map_btn: gen_btn
+    
+    BoxLayout:
+        orientation: 'horizontal'
+            
+        BoxLayout:
+            orientation: 'vertical'
+            Button:
+                text: 'Load Map'
+            Button:
+                text: 'Save Map'
+            Button:
+                id: gen_btn
+                text: 'Generate Map'
+                on_press: root.generateMap()
+            Button:
+                text: 'Enter Map'
+        BoxLayout:
+            orientation: 'vertical'
+            Image:
+                id: preview_image
+                source: 'ss2.png'
+                allow_stretch: 'True'
+                
+            SavesScrollView:
+                name: 'saves_display'
+                
+                SavesData:
+                    
+
+

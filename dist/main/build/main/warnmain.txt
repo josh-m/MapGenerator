@@ -1,0 +1,106 @@
+missing module named 'win32com.gen_py' - imported by win32com, C:\Python34\lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_win32comgenpy.py
+missing module named pyimod03_importers - imported by C:\Python34\lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_pkgres.py
+missing module named __main__ - imported by pkg_resources
+missing module named multiprocessing.Value - imported by multiprocessing, kivy.lib.osc.oscAPI
+missing module named multiprocessing.Queue - imported by multiprocessing, kivy.lib.osc.oscAPI
+missing module named multiprocessing.Process - imported by multiprocessing, kivy.lib.osc.oscAPI
+missing module named multiprocessing.set_start_method - imported by multiprocessing, multiprocessing.spawn
+missing module named multiprocessing.get_start_method - imported by multiprocessing, multiprocessing.spawn
+missing module named multiprocessing.get_context - imported by multiprocessing, multiprocessing.pool, multiprocessing.managers, multiprocessing.sharedctypes
+missing module named multiprocessing.TimeoutError - imported by multiprocessing, multiprocessing.pool
+missing module named multiprocessing.BufferTooShort - imported by multiprocessing, multiprocessing.connection
+missing module named multiprocessing.AuthenticationError - imported by multiprocessing, multiprocessing.connection
+missing module named _sysconfigdata - imported by sysconfig
+missing module named 'com.sun' - imported by appdirs
+missing module named com - imported by appdirs
+missing module named _winreg - imported by pygame, pygame.sysfont, appdirs, pygments.formatters.img
+missing module named __builtin__ - imported by PIL.Image, pyparsing
+missing module named ordereddict - imported by pyparsing
+missing module named six.moves.filter - imported by six.moves, pkg_resources
+missing module named six.moves.map - imported by six.moves, pkg_resources
+missing module named 'six.moves.urllib' - imported by 'six.moves.urllib'
+runtime module named six.moves - imported by pkg_resources, 'six.moves.urllib'
+missing module named StringIO - imported by six, pygments.util
+missing module named resource - imported by posix, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named posix - imported by os, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named _posixsubprocess - imported by subprocess, multiprocessing.util, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named 'org.python' - imported by pickle, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py, xml.sax
+missing module named readline - imported by cmd, code, pdb, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+excluded module named _frozen_importlib - imported by importlib, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named _scproxy - imported by urllib.request
+missing module named java - imported by platform, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named 'java.lang' - imported by platform, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py, xml.sax._exceptions
+missing module named vms_lib - imported by platform, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named termios - imported by tty, getpass, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named urllib.urlretrieve - imported by urllib, pygments.lexers._php_builtins
+missing module named urllib.FancyURLopener - imported by urllib, pygments.lexers._sourcemod_builtins
+missing module named urllib.urlopen - imported by urllib, pygments.lexers._lua_builtins, pygments.lexers._postgres_builtins
+missing module named urllib.pathname2url - imported by urllib, kivy.core.video.video_pygst, kivy.core.audio.audio_gstplayer, kivy.core.video.video_gi, kivy.core.video.video_gstplayer
+missing module named grp - imported by tarfile, shutil, pathlib, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named org - imported by copy, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named pwd - imported by posixpath, tarfile, shutil, http.server, webbrowser, pathlib, getpass, distutils.util, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py, docutils.frontend
+missing module named ce - imported by os, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named _dummy_threading - imported by dummy_threading, C:\Users\Jorsh\Desktop\4x\4X-Game\main.py
+missing module named cpngfilters - imported by pyglet.extlibs.png
+missing module named Tkinter - imported by PIL.ImageTk
+missing module named 'PySide.QtCore' - imported by PIL.ImageQt
+missing module named 'PyQt4.QtCore' - imported by PIL.ImageQt
+missing module named 'PyQt5.QtCore' - imported by PIL.ImageQt
+missing module named _imaging_gif - imported by PIL.GifImagePlugin
+missing module named cffi - imported by PIL.Image, PIL.PyAccess
+missing module named PIL._imagingagg - imported by PIL, PIL.ImageDraw
+missing module named Image - imported by pyglet.image.codecs.pil, kivy.core.image.img_pil, docutils.writers._html_base, docutils.writers.odf_odt, docutils.parsers.rst.directives.images
+missing module named pyglet.window.BaseWindow - imported by pyglet.window, pyglet.window.carbon, pyglet.window.cocoa, pyglet.window.win32, pyglet.window.xlib
+missing module named MacOS - imported by pyglet.canvas.carbon, pygame.macosx
+missing module named macresource - imported by MacOS
+missing module named Queue - imported by kivy.compat, pygame.threads
+missing module named 'pyobjus.dylib_manager' - imported by kivy.core.clipboard.clipboard_nspaste, kivy.core.audio.audio_avplayer
+missing module named pyobjus - imported by kivy.core.clipboard.clipboard_nspaste, kivy.core.audio.audio_avplayer
+missing module named ios - imported by kivy.metrics
+missing module named android - imported by kivy.metrics, kivy.core.window, kivy.input.providers.androidjoystick, kivy.support, kivy.core.window.window_pygame
+missing module named jnius - imported by kivy.metrics, kivy.core.camera.camera_android, kivy.core.clipboard.clipboard_android
+missing module named kivy.lib.vidcore_lite.egl - imported by kivy.lib.vidcore_lite, kivy.core.window.window_egl_rpi
+missing module named kivy.lib.vidcore_lite.bcm - imported by kivy.lib.vidcore_lite, kivy.core.window.window_egl_rpi
+missing module named 'android.runnable' - imported by kivy.core.clipboard.clipboard_android
+missing module named 'twisted.internet' - imported by kivy.support
+missing module named copy_reg - imported by cStringIO, pygame
+missing module named 'pygame._view' - imported by pygame
+missing module named pygame.sdlmain_osx - imported by pygame, pygame.macosx
+missing module named OpenGL - imported by pygame
+missing module named numpy - imported by pygame._numpysurfarray, pygame._numpysndarray, pygame, kivy.core.camera.camera_android
+missing module named 'pygame.movie' - imported by pygame
+missing module named pygame.SRCALPHA - imported by pygame, pygame.ftfont
+missing module named Py25Queue - imported by pygame.threads
+missing module named cStringIO - imported by pygame.compat, pygments.util
+missing module named gobject - imported by kivy.support
+missing module named gi - imported by kivy.support, kivy.core.audio.audio_pygst
+missing module named gst - imported by kivy.core.video.video_pygst, kivy.core.audio.audio_pygst, kivy.core.camera.camera_pygst
+missing module named pygst - imported by kivy.core.video.video_pygst, kivy.core.audio.audio_pygst, kivy.core.camera.camera_pygst
+missing module named VideoCapture - imported by kivy.core.camera.camera_videocapture
+missing module named 'gi.repository' - imported by kivy.core.clipboard.clipboard_gtk3, kivy.core.camera.camera_gi, kivy.core.audio.audio_gi, kivy.core.video.video_gi
+missing module named 'ffpyplayer.tools' - imported by kivy.core.image.img_ffpyplayer, kivy.core.video.video_ffpyplayer, kivy.core.audio.audio_ffpyplayer
+missing module named 'ffpyplayer.player' - imported by kivy.core.video.video_ffpyplayer, kivy.core.audio.audio_ffpyplayer
+missing module named ffpyplayer - imported by kivy.core.image.img_ffpyplayer, kivy.core.video.video_ffpyplayer, kivy.core.audio.audio_ffpyplayer
+missing module named dbus - imported by kivy.core.clipboard.clipboard_dbusklipper
+missing module named cv - imported by kivy.core.camera.camera_opencv
+missing module named 'opencv.highgui' - imported by kivy.core.camera.camera_opencv
+missing module named opencv - imported by kivy.core.camera.camera_opencv
+missing module named roman - imported by docutils.writers.latex2e, docutils.writers.manpage
+missing module named pygments.formatters.BBCodeFormatter - imported by pygments.formatters, kivy.uix.codeinput
+missing module named ctags - imported by pygments.formatters.html
+missing module named chardet - imported by pygments.lexer
+missing module named colorama - imported by pygments.cmdline
+missing module named elementtree - imported by docutils.writers.odf_odt
+missing module named android_mixer - imported by kivy.core.audio.audio_pygame
+missing module named 'android.mixer' - imported by kivy.core.audio.audio_pygame
+missing module named AppKit - imported by kivy.core.spelling.spelling_osxappkit
+missing module named 'ffpyplayer.pic' - imported by kivy.core.image.img_ffpyplayer
+missing module named Leap - imported by kivy.input.providers.leapfinger
+missing module named fcntl - imported by kivy.input.providers.hidinput, kivy.input.providers.linuxwacom
+missing module named cv2 - imported by kivy.core.camera.camera_android
+missing module named ffmpeg - imported by kivy.core.video.video_ffmpeg
+missing module named enchant - imported by kivy.core.spelling.spelling_enchant
+missing module named smb - imported by kivy.loader
+missing module named urllib2 - imported by kivy.loader
+missing module named ConfigParser - imported by kivy.config
+missing module named new - imported by kivy.weakmethod
