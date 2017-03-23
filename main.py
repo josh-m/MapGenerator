@@ -17,9 +17,5 @@ def main():
     Builder.load_file('menu/menu.kv')
     MapApp().run()
     
-def runPygletMap():
-    game = Game()
-    pyglet.app.run()
-    
 if __name__ == '__main__':
     main()

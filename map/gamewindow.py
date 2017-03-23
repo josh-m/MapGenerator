@@ -4,7 +4,7 @@ import pyglet
 from pyglet.window import key, mouse
 
 import ctypes
-import datetime
+from datetime import datetime
 from copy import deepcopy
 
 from map.definitions import DiagDir, Terrain, Feature, UnitType, HexDir, SpriteType
@@ -154,7 +154,7 @@ class GameWindow(pyglet.window.Window):
             ('c3B', (255,255,0) * 8)
         )
         
-    def saveMapImage(self):
+    def saveMap(self):
         #save map file
         with open('saves/' + self.save_name + '.map', 'wb') as f:
             pickle.dump(self.map, f)

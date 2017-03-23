@@ -40,7 +40,9 @@ class MapDisplay():
         self.clearAllSprites()
     
         if not center_tile:
-            center_tile = self.map.start_tile
+            center_tile = self.map.tileAt(
+                (int(MAP_COL_COUNT/2), int(MAP_ROW_COUNT/2))
+            )
     
         self.camera_zoom = 1.0
         self.cam_pos = [0,0]

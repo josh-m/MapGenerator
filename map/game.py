@@ -13,13 +13,15 @@ for the game map and window.
 """
 class Game():
         
-    def __init__(self):
-        map = None
+    def __init__(self, map):
+        map = map
         
+        """
         try:
             map_file = open("save.map", "rb")
             map = pickle.load(map_file)
         except FileNotFoundError:
             map = Map()
+        """
             
         window = GameWindow(map)

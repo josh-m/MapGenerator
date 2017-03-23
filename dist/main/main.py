@@ -1,7 +1,4 @@
 #!python3
-import sys
-sys.setrecursionlimit(500)
-
 import pyglet
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager
@@ -19,10 +16,6 @@ class MapApp(App):
 def main():
     Builder.load_file('menu/menu.kv')
     MapApp().run()
-    
-def runPygletMap():
-    game = Game()
-    pyglet.app.run()
     
 if __name__ == '__main__':
     main()

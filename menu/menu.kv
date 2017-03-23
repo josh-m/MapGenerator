@@ -2,6 +2,9 @@
 #:import SavesScrollView menu.saves
 #:import SavesData menu.saves
 
+<SavesDataButton>:
+    height: self.minimum_height
+
 <SavesData>:
     name: 'saves_data'
     height: self.minimum_height
@@ -15,31 +18,23 @@
     gen_map_btn: gen_btn
     
     BoxLayout:
-        orientation: 'horizontal'
+        orientation: 'vertical'
+        Image:
+            id: preview_image
+            source: 'ss2.png'
+            allow_stretch: 'True'
+            size_hint_y: 0.7
             
         BoxLayout:
-            orientation: 'vertical'
-            Button:
-                text: 'Load Map'
-            Button:
-                text: 'Save Map'
+            orientation: 'horizontal'
+            size_hint_y: 0.3
             Button:
                 id: gen_btn
                 text: 'Generate Map'
                 on_press: root.generateMap()
             Button:
                 text: 'Enter Map'
-        BoxLayout:
-            orientation: 'vertical'
-            Image:
-                id: preview_image
-                source: 'ss2.png'
-                allow_stretch: 'True'
-                
+                on_press: root.enterMap()
             SavesScrollView:
                 name: 'saves_display'
-                
                 SavesData:
-                    
-
-

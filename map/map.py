@@ -12,6 +12,7 @@ from opensimplex import OpenSimplex
 import pickle
 import ctypes
 import pyglet
+from datetime import datetime
 
 from map.tile import Tile
 from map.definitions import HexDir, Terrain, Feature, UnitType, UiElement
@@ -42,6 +43,7 @@ class Map():
     Supply two integers to constructor to generate a different size.
     """
     def __init__(self, n_cols=MAP_COL_COUNT, n_rows=MAP_ROW_COUNT, save_map=True):
+        self.save_name = datetime.now().strftime('%Y_%a%d%b_%I_%M%p')
         self.size = (n_cols, n_rows)
         self.columns = list()
 
@@ -52,6 +54,8 @@ class Map():
                 column.append(Tile([col, row]))
 
             self.columns.append(column)
+        
+        self.visuals_generated = False
         
         self.generateTiles()
         
@@ -67,16 +71,9 @@ class Map():
         print('forests')
         self.generateForests()        
     
-    def generateVisual(self):
-        print('borders')
-        #self.generateTerrainBorders()
-               
-        print('start loc')
-        #self.determineStartTile()
-        
-    def determineStartTile(self):
-        walkable_tiles = [tile for tile in self.allTiles() if tile.isEnterableByLandUnit()]
-        self.start_tile = random.choice(walkable_tiles)
+    def generateVisuals(self):
+        self.generateTerrainBorders()
+        self.visuals_generated = True
 
     """
     tileAt:
@@ -563,4 +560,9 @@ class Map():
             
         pix_arr = (ctypes.c_ubyte * len(pixels))(*pixels)
         image_data = pyglet.image.ImageData(MAP_COL_COUNT, MAP_ROW_COUNT, 'RGB', pix_arr)
-        image_data.save('saves/temp.png') 
+        image_data.save('saves/temp.png')
+        image_data.save('saves/' + self.save_name + '.png')
+        
+    def saveMapData(self):
+        with open('saves/' + self.save_name + '.map', 'wb') as f:
+            pickle.dump(self, f)

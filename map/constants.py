@@ -12,7 +12,7 @@ DRAW_Y = 12 #length of columns drawn to map display
 UI_PANEL_WIDTH = 200
 
 SCROLL_MARGIN = 60 #pixels
-SCROLL_SPEED = 15
+SCROLL_SPEED = 18
 
 WRAP_X = False
 WRAP_Y = False
