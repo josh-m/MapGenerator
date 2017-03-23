@@ -14,6 +14,7 @@ class MapApp(App):
         return self.sm
         
 def main():
+    Builder.load_file('menu/menu.kv')
     MapApp().run()
     
 def runPygletMap():
