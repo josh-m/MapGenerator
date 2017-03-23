@@ -10,11 +10,13 @@ import math
 from queue import Queue
 from opensimplex import OpenSimplex
 import pickle
+import ctypes
+import pyglet
 
 from map.tile import Tile
 from map.definitions import HexDir, Terrain, Feature, UnitType, UiElement
 from map.constants import MAP_COL_COUNT, MAP_ROW_COUNT, MAX_DISTANCE, WRAP_X, WRAP_Y
-from map.util import isEven
+from map.util import isEven, tileMinimapColor
 
 ELEVATION_SEALEVEL = 0.05
 ELEVATION_HILL = 0.4
@@ -50,23 +52,28 @@ class Map():
                 column.append(Tile([col, row]))
 
             self.columns.append(column)
-
+        
+        self.generateTiles()
+        
+    def generateTiles(self):
+        print('elevation')
         self.generateElevation()
+        print('moisture')
         self.generateMoisture()
+        print('temp')
         self.determineTemperature()
+        print('biomes')
         self.determineBiomes()
+        print('forests')
+        self.generateForests()        
+    
+    def generateVisual(self):
+        print('borders')
+        #self.generateTerrainBorders()
+               
+        print('start loc')
+        #self.determineStartTile()
         
-        self.generateTerrainBorders()
-        
-        self.generateForests()
-
-        self.determineStartTile()
-        
-        if save_map:
-            with open('saves/save.map', 'wb') as f:
-                print('saving map')
-                pickle.dump(self, f)
-
     def determineStartTile(self):
         walkable_tiles = [tile for tile in self.allTiles() if tile.isEnterableByLandUnit()]
         self.start_tile = random.choice(walkable_tiles)
@@ -546,3 +553,14 @@ class Map():
                 tiles.append(tile)
                 
         return tiles
+        
+    def saveMinimapPng(self):
+        pixels = [0,0,0] * (MAP_ROW_COUNT * MAP_COL_COUNT)
+        tiles = self.allTiles()
+        for tile in tiles:
+            start_idx = (MAP_COL_COUNT * tile.pos[1] * 3) + (tile.pos[0] * 3) 
+            pixels[start_idx : start_idx+3] = tileMinimapColor(tile)
+            
+        pix_arr = (ctypes.c_ubyte * len(pixels))(*pixels)
+        image_data = pyglet.image.ImageData(MAP_COL_COUNT, MAP_ROW_COUNT, 'RGB', pix_arr)
+        image_data.save('saves/temp.png') 

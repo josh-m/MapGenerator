@@ -56,14 +56,6 @@ class Tile():
 
     def setTerrain(self, terrain):
         self.terrain = terrain
-        
-        if self.isFlatland():
-            if self.terrain == Terrain.DESERT:
-                self.move_cost = 2
-            else:
-                self.move_cost = 1
-        elif self.isHills():
-            self.move_cost = 2
 
     def addBorder(self, terrain, hexdir):
         
