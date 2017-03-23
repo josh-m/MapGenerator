@@ -7,7 +7,7 @@ from kivy.lang import Builder
 from menu.menu import MenuScreen
 from map.game import Game
 
-class MapApp(App):
+class MapGeneratorApp(App):
     def build(self):
         self.sm = ScreenManager()
         self.sm.add_widget(MenuScreen())
@@ -15,7 +15,7 @@ class MapApp(App):
         
 def main():
     Builder.load_file('menu/menu.kv')
-    MapApp().run()
+    MapGeneratorApp().run()
     
 if __name__ == '__main__':
     main()

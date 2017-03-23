@@ -21,7 +21,7 @@
         orientation: 'vertical'
         Image:
             id: preview_image
-            source: 'ss2.png'
+            source: 'globe.png'
             allow_stretch: 'True'
             size_hint_y: 0.7
             
@@ -35,6 +35,12 @@
             Button:
                 text: 'Enter Map'
                 on_press: root.enterMap()
-            SavesScrollView:
-                name: 'saves_display'
-                SavesData:
+            BoxLayout:
+                orientation: 'vertical'
+                Label:
+                    text: 'Select an existing map:'
+                    size_hint_y: 0.1
+                SavesScrollView:
+                    name: 'saves_display'
+                    size_hint_y: 0.9
+                    SavesData:

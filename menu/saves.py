@@ -29,7 +29,12 @@ class SavesScrollView(ScrollView):
         super(SavesScrollView, self).__init__(**kwargs)
         
 def selectMapFile(save_button):
-    #menu_screen is the 2nd highest level widget
+    saves_data = save_button.parent
+    for btn in saves_data.children:
+        btn.disabled = False
+    save_button.disabled = True
+    
     menu_screen = [w for w in save_button.walk_reverse()][-2]
    
     menu_screen.loadMap(save_button.text)
+   

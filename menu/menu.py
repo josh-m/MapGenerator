@@ -72,7 +72,5 @@ class MenuScreen(Screen):
         img_fname = 'saves/temp.png'        
         self.map_preview.source = img_fname
         self.map_preview.reload()
-        
-    def enableFileButtons(self, exc_btn=None):
-        pass
+
         
